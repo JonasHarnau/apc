@@ -318,3 +318,514 @@ class Model:
             self.data_vector = data_vector          
                 
         _set_trapezoid_information(self, data_vector)
+        
+    
+    def _get_design_components(self):
+        """
+        Internal function  that creates the design components.
+        
+        This function creates the 'level', 'slopes' and 'double_diffs'. Combined
+        this would yield a collinear design. The theory is described in Nielsen
+        (2014, 2015) which generalises introduced by Kuang, Nielsen and Nielsen
+        (2008). In normal use this function is needed for internal use by
+        'get_design'.
+        
+        
+        Parameters
+        ----------
+        
+        Extracts necessary information from apc.Model().data_as_df(). Specifically, 
+        it uses the trapezoid information I, K, J, L, n and 'data_vector'.
+        
+        Returns
+        -------
+        
+        Dictionary attached to self
+        The dictionary contains the following.
+        
+        anchor_index : int
+                       This is what Nielsen (2014, 2015) defines as 'U'. (U,U)
+                       is the array index in age-cohort space that contains only
+                       the level, starting to count from 0. 
+        
+        per_odd : bool
+                  This is 'True' if the period before the first observed period
+                  has an odd index, starting to count from 1 for age, period and
+                  cohort.
+        
+        level : pandas.Series
+                Unit vector of length equal to the number of obeservations.
+                
+        slopes : dict
+                 Keys are 'Age', 'Period' and 'Cohort', values are the designs
+                 for the accompanying slopes.
+        
+        double_diffs : dict
+                       Keys are 'Age', 'Period' and 'Cohort', values are the 
+                       design for the accompanying slopes.
+            
+        
+        Notes
+        -----
+        
+        The description is largely taken from the R package apc.
+        
+        
+        See also
+        --------
+        
+        apc.Model().fit : This fits a model and either calls or, if specified
+                          as input, uses _get_design_components.
+                          
+        
+        Examples
+        --------
+        
+        >>> import pandas as pd
+        >>> data = pd.read_excel('./data/data_Belgian_lung_cancer.xlsx', 
+        ...                      sheetname = ['response', 'rates'], index_col = 0)
+        >>> import apc
+        >>> model = apc.Model()
+        >>> model.data_from_df(data['response'], rate=data['rates'], 
+        ...                    data_format='AP')
+        
+        >>> data = apc.data_Italian_bladder_cancer()
+        >>> AC_design = apc.get_design_components(data)
+        >>> AC_design
+        
+        
+        References
+        ----------
+        
+        Kuang, D., Nielsen, B. and Nielsen, J.P. (2008a) Identification of the age-
+        period-cohort model and the extended chain ladder model. Biometrika 95, 979-
+        986. 
+        
+        Nielsen, B. (2014) Deviance analysis of age-period-cohort models.
+        
+        Nielsen, B. (2015) apc: An R package for age-period-cohort analysis. R
+        Journal 7, 52-64.
+        
+        """
+        
+        # Get the trapezoid indices with internal counting (0, 1, 2, ...), 
+        # rather than counting by labels (e.g. 1955-1959, 1960-1964, ...).
+        try: 
+            index = self.data_vector.reorder_levels(['Age', 'Period', 'Cohort']).index
+        except AttributeError:
+            raise AttributeError("'data_vector' not found, run 'data_from_df' first.")
+        index_levels_age = index.levels[0]
+        index_levels_per = index.levels[1]
+        index_levels_coh = index.levels[2]
+        index_trap = (pd.DataFrame(index.labels, index = index.names).T.
+                      loc[:,['Age','Cohort']])
+        
+        I = self.I
+        K = self.K
+        J = self.J
+        L = self.L
+        n = self.n
+        
+        anchor_index = int((L + 3)/2 -1)
+        per_odd = False if L % 2 == 0 else True
+        
+        level = pd.Series(1, index = range(n), name = 'level')
+        
+        slope_age = index_trap['Age'] - anchor_index
+        slope_age.rename('slope_age', inplace = True)
+        slope_coh = index_trap['Cohort'] - anchor_index
+        slope_coh.rename('slope_coh', inplace = True)
+        slope_per = slope_age + slope_coh
+        slope_per.rename('slope_per', inplace = True)
+        
+        dd_age_col = ['dd_age_{}'.format(age) for age in index_levels_age[2:]]
+        dd_age = pd.DataFrame(0, index = range(n), columns = dd_age_col)
+        
+        for i in range(anchor_index):
+            dd_age.loc[slope_age == slope_age[0] + i, i:anchor_index] = (
+                np.arange(1, anchor_index - i + 1))
+        
+        for i in range(1, I - anchor_index):
+            dd_age.loc[slope_age == i + 1, anchor_index:anchor_index + i] = (
+                np.arange(i, 0, -1))
+        
+        dd_per_col = ['dd_per_{}'.format(per) for per in index_levels_per[2:]]
+        dd_per = pd.DataFrame(0, index = range(n), columns = dd_per_col)
+        
+        if per_odd:
+            dd_per.loc[slope_per == -1,0:1] = 1
+        
+        for j in range(J - 2 - per_odd):
+            dd_per.loc[slope_per == j + 2, int(per_odd):j + 1 + int(per_odd)] = (
+                np.arange(j + 1, 0, -1))
+        
+        dd_coh_col = ['dd_coh_{}'.format(coh) for coh in index_levels_coh[2:]]
+        dd_coh = pd.DataFrame(0, index = range(n), columns = dd_coh_col)
+        
+        
+        for k in range(anchor_index):
+            dd_coh.loc[slope_coh == - anchor_index + k, k:anchor_index] = (
+                np.arange(1, anchor_index - k + 1))
+        
+        for k in range(1, K - anchor_index):
+            dd_coh.loc[slope_coh == k + 1, anchor_index:anchor_index + k] = (
+                np.arange(k, 0, -1))
+        
+        design_components = {
+            'index': self.data_vector.index,
+            'anchor_index': anchor_index, 
+            'per_odd': per_odd,
+            'level': level,
+            'slopes': {'Age' : slope_age, 
+                       'Period' : slope_per, 
+                       'Cohort' : slope_coh},
+            'double_diffs': {'Age' : dd_age, 
+                             'Period' : dd_per, 
+                             'Cohort' : dd_coh}
+               }
+        
+        self._design_components = design_components
+    
+    def _get_design(self, predictor, design_components=None):
+        """
+        Takes _design_components and builds design matrix for predictor.
+        """
+    
+        if design_components is None:
+            self._get_design_components()
+            design_components = self._design_components
+        
+        level = design_components['level']
+        slopes = design_components['slopes']
+        double_diffs = design_components['double_diffs']
+        
+        design = pd.concat(
+            (
+                level,
+                slopes['Age'] if predictor in 
+                ('APC', 'AP', 'AC', 'PC', 'Ad', 'Pd', 'Cd', 'A', 't', 'tA')
+                else None,
+                slopes['Period'] if predictor in 
+                ('P','tP')
+                else None,
+                slopes['Cohort'] if predictor in 
+                ('APC', 'AP', 'AC', 'PC', 'Ad', 'Pd', 'Cd', 'C', 't', 'tC')
+                else None,
+                double_diffs['Age'] if predictor in 
+                ('APC', 'AP', 'AC', 'Ad', 'A') 
+                else None,
+                double_diffs['Period'] if predictor in 
+                ('APC', 'AP', 'PC', 'Pd', 'P')
+                else None,
+                double_diffs['Cohort'] if predictor in 
+                ('APC', 'AC', 'PC', 'Cd', 'C') 
+                else None
+            ),
+            axis = 1)
+        
+        design.index = design_components['index']
+        
+        return design
+        
+    def fit(self, family, predictor, design_components=None, attach_to_self=True):
+        """
+        Fits an age-period-cohort model to the data from Model().data_from_df().
+    
+        The model is parametrised in terms of the canonical parameter introduced by
+        Kuang, Nielsen and Nielsen (2008), see also the implementation in Martinez
+        Miranda, Nielsen and Nielsen (2015), and Nielsen (2014, 2015). This
+        parametrisation has a number of advantages: it is freely varying, it is the
+        canonical parameter of a regular exponential family, and it is invariant to
+        extentions of the data matrix.
+    
+        'fit' can be be used for all three age period cohort factors, or for
+        submodels with fewer of these factors. It can be used in a pure response 
+        setting or in a dose-response setting. It can handle binomial, Gaussian, 
+        log-normal, over-dispersed Poisson and Poisson models.
+
+        Parameters
+        ----------
+    
+        family : {"binomial_dose_response", 
+                  "poisson_response", "od_poisson_response", 
+                  "gaussian_rates", "gaussian_response", 
+                  "log_normal_rates", "log_normal_response"}
+                  
+                  Specifies the family used when calling
+                  "poisson_response"
+                      Poisson family with log link. Only responses are 
+                      used. Inference is done in a multinomial model, 
+                      conditioning on the overall level as documented in
+                      Martinez Miranda, Nielsen and Nielsen (2015).
+                  "od_poisson_response"
+                      Poisson family with log link. Only responses are 
+                      used. Inference is done in an over-dispersed Poisson
+                      model as documented in Harnau and Nielsen (2017). 
+                      Note that limit distributions are t and F, not 
+                      normal and chi2.
+                  "binomial_dose_response"
+                      Binomial family with logit link. Gives a logistic
+                      regression.
+                  "gaussian_rates"
+                      Gaussian family with identity link. The dependent
+                      variable are rates.
+                  "gaussian_response"
+                      Gaussian family with identity link. Gives a 
+                      regression on the responses.
+                  "log_normal_response"
+                      Gaussian family with identity link. Dependent 
+                      variable are log responses.
+                  "log_normal_rates"
+                      Gaussian family with identity link. Dependent 
+                      variable are log rates.              
+        
+        predictor : {'APC', 
+                     'AP', 'AC', 'PC', 
+                     'Ad', 'Pd', 'Cd', 
+                     'A', 'P', 'C',
+                     't', 'tA', 'tP', 'tC', 
+                     '1'}
+                           
+                     Indicates the design choice. The following options are
+                     available. These are discussed in Nielsen (2014).
+                     "APC"
+                         Age-period-cohort model.
+                     "AP"
+                         Age-period model. Nested in "APC"
+                     "AC"
+                         Age-cohort model. Nested in "APC"
+                     "PC"
+                         Period-cohort model. Nested in "APC"
+                     "Ad"
+                         Age-trend model, including age effect and two linear
+                         trends. Nested in "AP", "AC".
+                     "Pd"
+                         Period-trend model, including period effect and two
+                         linear trends. Nested in "AP", "PC".
+                     "Cd"
+                         Cohort-trend model, including cohort effect and two
+                         linear trends. Nested in "AC", "PC".
+                     "A"
+                         Age model. Nested in "Ad".
+                     "P"
+                         Period model. Nested in "Pd".
+                     "C"
+                         Cohort model. Nested in "Cd".
+                     "t"
+                         Trend model, with two linear trends. Nested in "Ad",
+                         "Pd", "Cd".
+                     "tA"
+                         Single trend model in age index. Nested in "A", "t".
+                     "tP"
+                         Single trend model in period index. Nested in "P", "t".
+                     "tC"
+                         Single trend model in cohort index. Nested in "C", "t".
+                     "1"
+                         Constant model. Nested in "tA", "tP", "tC".
+        
+        
+                         
+        Returns
+        -------
+        
+        The following variables attached to self.
+        
+        deviance : float
+                   Corresponds to the deviance of 'fit.deviance', except for Gaussian
+                   and log-normal models where it is - 2 * log-likelihood, rather 
+                   than RSS.
+        
+        RSS : float (only for Gaussian and log-normal models)
+              Sum of squared residuals, on the log-scale for log-nromal models.
+        
+        s2 : float (only for Gaussian and log-normal models)
+             Normal variance estimator 'RSS / df_resid'.
+        
+        sigma2 : float (only for Gaussian and log-normal models)
+                 Maximum likelihood normal variance estimator 'RSS / n'.
+        
+        para_table : pandas.DataFrame
+                     Dataframe with four columns: coefficients, standard errors,
+                     z-stats/t-stats (ratio of coefficients to standard errors) and 
+                     p-values. 
+        
+        cov_canonical : pandas.DataFrame
+                        Normalized covariance matrix. For Poisson and over-dispersed
+                        Poisson models this is the 
+        
+        Notes
+        -----
+        
+        'cov_canonical' generally equals 'fit.normalized_cov_params', except for 
+        over-dispersed Poisson models when it is adjusted to a multinomial covariance;
+        see Harnau and Nielsen (2017).
+        
+        'deviance' for Gaussian and log-normal models equals - 2 * log-likelihood, 
+        not RSS.
+            
+        p-values for 'coefs_canonical_table' are generally computed from a normal
+        distribution. The exception is an over-dispersed Poisson model for which these
+        come from a t distribution; see Harnau and Nielsen (2017).
+        
+        The description is largely taken from the R package apc.
+        
+        
+        References
+        ----------
+        
+        Harnau, J. and Nielsen, B. (2017) Asymptotic theory for over-dispersed 
+        age-period-cohort and extended chain ladder models. To appear in Journal
+        of the American Statistical Association.
+        
+        Kuang, D., Nielsen, B. and Nielsen, J.P. (2008a) Identification of the 
+        age-period-cohort model and the extended chain ladder model. Biometrika 
+        95, 979-986. 
+    
+        Martinez Miranda, M.D., Nielsen, B. and Nielsen, J.P. (2015) Inference 
+        and forecasting in the age-period-cohort model with unknown exposure 
+        with an application to mesothelioma mortality. Journal of the Royal 
+        Statistical Society A 178, 29-55.
+        
+        Nielsen, B. (2014) Deviance analysis of age-period-cohort models. 
+        Nuffield Discussion Paper 2014-W03
+        
+        Nielsen, B. (2015) apc: An R package for age-period-cohort analysis. 
+        R Journal 7, 52-64.
+        
+        """
+        
+        ## Model family
+        supported_families = ("binomial_dose_response", 
+                              "poisson_response", "od_poisson_response",
+                              "gaussian_rates", "gaussian_response", 
+                              "log_normal_rates", "log_normal_response")
+        if family not in supported_families:
+            raise ValueError("\'family\' not understood. Check the help.")
+        
+        ## Model predictor
+        supported_predictors = ("APC", "AP", "AC", "PC", "Ad", "Pd", "Cd", 
+                                "A", "P", "C", "t", "tA", "tP", "tC", "1")
+        if predictor not in supported_predictors:
+            raise ValueError("\'predictor\' not understood. Check the help.")
+            
+        # Get the design matrix
+        design = self._get_design(predictor, design_components)
+        
+        # Get the data
+        response = self.data_vector['response']        
+        if family is 'binomial_dose_response':
+            dose = self.data_vector['dose']
+        elif family in ('gaussian_rates', 'log_normal_rates'):
+            rate = self.data_vector['rate']
+        
+        # Create the glm object
+        if family is 'binomial_dose_response':
+            glm = sm.GLM(pd.concat((response, dose - response), axis = 1), design, 
+                         family=sm.families.Binomial(sm.families.links.logit))    
+        elif family in ('poisson_response', 'od_poisson_response'):
+            glm = sm.GLM(response, design, 
+                         family=sm.families.Poisson(sm.families.links.log))        
+        elif family is 'gaussian_response':
+            glm = sm.GLM(response, design, 
+                         family = sm.families.Gaussian(sm.families.links.identity))
+        elif family is 'gaussian_rates':
+            glm = sm.GLM(rate, design, 
+                         family = sm.families.Gaussian(sm.families.links.identity))
+        elif family is 'log_normal_response':
+            glm = sm.GLM(np.log(response), design, 
+                         family = sm.families.Gaussian(sm.families.links.identity))
+        elif family is 'log_normal_rates':
+            glm = sm.GLM(np.log(rate), design, 
+                         family = sm.families.Gaussian(sm.families.links.identity))
+        
+        # Fit the model
+        fit = glm.fit()
+        
+        # Gather results (Note: the 'fit' object does NOT necessarily provide
+        # correct (asymptotic) results! For Poisson and over-dispersed Poisson 
+        # the errors are based on large n asymptotics which are invalid here)     
+        xi_dim = design.shape[1]
+        
+        coefs_canonical = fit.params
+        coefs_canonical.rename('coef', inplace = True)
+        cov_canonical = fit.normalized_cov_params
+        
+        if family not in ('poisson_response', 'od_poisson_response'):            
+            std_errs = fit.bse
+            std_errs.rename('std err', inplace = True)
+            t_stat = fit.tvalues
+            t_stat.rename('z', inplace = True)
+            p_values = fit.pvalues
+            p_values.rename('P>|z|', inplace = True)            
+        else:         
+            # Adjust covariance matrix
+            c22 = cov_canonical.iloc[1:xi_dim,1:xi_dim]
+            c21 = cov_canonical.iloc[1:xi_dim,0]
+            c11 = cov_canonical.iloc[0,0]
+            cov_canonical.iloc[1:xi_dim,1:xi_dim] = c22 - np.outer(c21,c21)/c11
+            cov_canonical.iloc[0,:] = 0
+            cov_canonical.iloc[:,0] = 0
+            
+            if family is 'od_poisson_response':
+                cov_canonical = cov_canonical * (fit.deviance / fit.df_resid)
+                    
+            std_errs = pd.Series(np.sqrt(np.diag(cov_canonical)),
+                                 index = cov_canonical.index)
+            std_errs.rename('std err', inplace=True)
+            
+            t_stat = coefs_canonical.divide(std_errs)
+            t_stat.rename('t stat', inplace=True)
+            
+            if family is 'poisson_response':
+                t_stat.rename('z', inplace = True)
+                p_values = 2 * pd.Series(1 - stats.norm.cdf(abs(t_stat)), 
+                                     index = coefs_canonical.index)
+                p_values.rename('P>|z|', inplace=True)
+            else:
+                t_stat.rename('t', inplace = True)
+                p_values = 2 * pd.Series(1 - stats.t.cdf(abs(t_stat), fit.df_resid), 
+                                     index = coefs_canonical.index)
+                p_values.rename('P>|t|', inplace=True)
+            
+            # In mixed parametrization cannot make inference about level.
+            t_stat[0] = std_errs[0] = p_values[0] = np.nan
+            
+        para_table = pd.concat((coefs_canonical, std_errs, t_stat, p_values), 
+                                    axis = 1)
+        df_resid = fit.df_resid
+        cov_canonical = cov_canonical
+        fitted_values = fit.fittedvalues
+        
+        if family in ("gaussian_rates", "gaussian_response", 
+                      "log_normal_rates", "log_normal_response"):
+            RSS = fit.deviance
+            sigma2 = RSS / fit.nobs
+            s2 = RSS / fit.df_resid
+            deviance = fit.nobs * (1 + np.log(2 * np.pi) + np.log(sigma2))
+            aic = fit.aic
+        else:
+            deviance = fit.deviance        
+        
+        if family in ("log_normal_rates", "log_normal_response"):
+            fitted_values = np.exp(fitted_values)
+        
+        output = {'para_table': para_table,
+                  'df_resid': df_resid,
+                  'predictor': predictor,
+                  'family': family,
+                  'design': design,
+                  'deviance': deviance, 
+                  'fitted_values': fitted_values}
+        try:
+            output['RSS'] = RSS
+            output['sigma2'] = sigma2
+            output['s2'] = s2
+            output['aic'] = aic
+        except NameError:
+            pass
+        
+        if attach_to_self:
+            for key, value in output.items():
+                setattr(self, key, value)
+        else:
+            return output
