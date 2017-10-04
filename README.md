@@ -17,8 +17,9 @@ be expanded quickly to the functionality of the last version 0.1.0.
 
 1. Specify a model: ``model = Model()``
 2. Attach the data: ``model.data_from_df(pandas.DataFrame)``
-3. Fit the model: ``model.fit(family, predictor)``
-4. Fit a deviance table to check for valid reductions: ``model.fit_table()``
+3. Plot data sunms: ``model.plot_data_sums()``
+4. Fit the model: ``model.fit(family, predictor)``
+5. Fit a deviance table to check for valid reductions: ``model.fit_table()``
 
 ## Example
 
@@ -74,6 +75,16 @@ Period    Age   Cohort
 Note that the model is capable of generating cohort labels that reflect the correct range.
 For instance, an individual who is 25-29 in 1955-1959 was born between 1926 and 1934.
 
+We can move on to plot the data sums
+```
+model.plot_data_sums()
+
+model.plotted_data_sums
+```
+![data_sum_plot](https://user-images.githubusercontent.com/25103918/31182586-458c3aa6-a8f2-11e7-8953-8b8f036a99a3.png)
+This function includes functionality to transform index ranges into integer indices to 
+allow for prettier axis labels. We can choose to transform to start, mean, or end of the 
+range, or to keep the range labels.
 
 Next, we can fit a model to the data. For example, a log-normal model for the rates
 with an age-period-cohort predictor is fit like this
