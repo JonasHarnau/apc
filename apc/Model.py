@@ -1151,7 +1151,7 @@ class Model:
             data_vector.set_index(idx_names, inplace=True)
         
         fig, ax = plt.subplots(nrows=data_vector.shape[1], ncols=3, 
-                               sharex='col', figsize=None)
+                               sharex='col', figsize=figsize)
         
         for i,idx_name in enumerate(idx_names):
             data_sums = data_vector.groupby(idx_name).sum()
@@ -1253,7 +1253,7 @@ class Model:
             data_vector.set_index(idx_names, inplace=True)
         
         fig, ax = plt.subplots(nrows=1, ncols=data_vector.shape[1], sharey=True,
-                               figsize=None)        
+                               figsize=figsize)
 
         for i, col in enumerate(data_vector.columns):
             try:
