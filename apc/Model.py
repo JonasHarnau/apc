@@ -565,7 +565,6 @@ class Model:
                   "gaussian_rates", "gaussian_response", 
                   "log_normal_rates", "log_normal_response"}
                   
-                  Specifies the family used when calling
                   "poisson_response"
                       Poisson family with log link. Only responses are 
                       used. Inference is done in a multinomial model, 
@@ -845,9 +844,112 @@ class Model:
             return output
 
         
-    def fit_table(self, family=None, reference_predictor=None, design_components=None, 
-                  attach_to_self=True):
+    def fit_table(self, family=None, reference_predictor=None, 
+                  design_components=None, attach_to_self=True):
         
+        """
+         
+        Produces a deviance table.
+        
+        'fit_table' produces a deviance table for up to 15 combinations of
+        the three factors and linear trends: "APC", "AP", "AC", "PC", "Ad",
+        "Pd", "Cd", "A", "P", "C", "t", "tA", "tP", "tC", "1"; see 
+        Nielsen (2014) for a discussion. 'fit_table' allows to specify a 
+        'reference_predictor'. The deviance table includes all models nested
+        from that point onwards. Nielsen (2015) who elaborates on the 
+        equivalent function of the R package apc.
+        
+        
+        Parameters
+        ----------
+        
+        family : see help for Model().fit() for a description (optional)
+                 If not specified attempts to read from self.
+        
+        model_design : see help for Model().fit() for a description (optional)
+                       If not specified attempts to read from self.
+        
+        design_components : pandas.DataFrame (optional)
+                            Output of Model()._get_design_components(). Can 
+                            speed up computations if 'fit_table' is called 
+                            repeatedly. If not provided this is computed 
+                            internally.
+                            
+        attach_to_self : bool (optional)
+                         Default True. If this is True the deviance_table is
+                         attached to self.deviance_table. If False the table
+                         is returned.
+        
+        Returns
+        -------
+        
+        pandas.DataFrame
+        Either attached to self.deviance_table or returned.
+        
+        The dataframe has the following columns.
+        
+        "-2logL" or "deviance"
+            -2 log Likelihood up to some constant. If the model family is 
+            Poisson or binomial (logistic) this is the same as the glm 
+            deviance: That is the difference in -2 log likelihood value between
+            estimated model and the saturated model. If the model family is 
+            Gaussian it is different from the traditional glm deviance. Here 
+            -2 log likelihood value is measured in a model with unknown variance,
+            which is the standard in regression analysis, whereas in the glm 
+            package the deviance is the residual sum of squares, which can be 
+            interpreted as the -2 log likelihood value in a model with variance 
+            set to one.
+            
+        "df_resid"
+            Degrees of freedom of residual: n_obs - len(parameter). 
+            
+        "P>chi_sq"
+            p-value of the deviance, -2logL, compared to a chi-square. Left out
+            in Gaussian case which has no saturated model.
+            
+        "LR_vs_{ref}"
+            The likelihood ratio statistic against the reference model.
+            
+         "df_vs_{ref}"
+            Degrees of freedom against the reference model.
+        "P>chi_sq"
+            p-value of log likelihood ratio statistic compared to a chi-square.
+        "aic"
+            Akaike's "An Information Criterion", minus twice the maximized 
+            log-likelihood plus twice the number of parameters upto a constant. 
+            It is take directly from the glm function. 
+            
+        "F"
+            Only included for "od_poisson_response". F statistic: Ratio of 
+            'LR_vs_{ref} / df_vs_{ref}' to '-2logL / df_resid'
+            
+        "P>F"
+           Only included for "od_poisson_response". p-value of "F" statistic 
+           compared to F-distribution. 
+        
+        
+        Examples
+        --------
+        
+        >>> from apc.Model import Model
+        >>> from apc.data.pre_formatted import loss_TA
+        >>> model = Model()
+        >>> model.data_from_df(loss_TA(), time_adjust=1)
+        >>> model.fit_table('od_poisson_response', 'APC')
+        
+        
+        References
+        ----------
+        
+        Harnau, J. and Nielsen, B. (2017) Asymptotic theory for over-dispersed 
+        age-period-cohort and extended chain ladder models. To appear in Journal
+        of the American Statistical Association.
+        
+        Nielsen, B. (2015) apc: An R package for age-period-cohort analysis. 
+        R Journal 7, 52-64.
+        
+        """
+    
         if design_components is None:
             self._get_design_components()
             design_components = self._design_components
