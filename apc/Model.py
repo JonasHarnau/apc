@@ -4,6 +4,7 @@ import statsmodels.api as sm
 from scipy import stats
 import collections
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 class Model:
     """
@@ -397,7 +398,7 @@ class Model:
         --------
         
         >>> import pandas as pd
-        >>> data = pd.read_excel('./data/data_Belgian_lung_cancer.xlsx', 
+        >>> data = pd.read_excel('./data/Belgian_lung_cancer.xlsx', 
         ...                      sheetname = ['response', 'rates'], index_col = 0)
         >>> import apc
         >>> model = apc.Model()
@@ -1125,7 +1126,7 @@ class Model:
         --------
 
         >>> import pandas as pd
-        >>> data = pd.read_excel('./data/data_Belgian_lung_cancer.xlsx', 
+        >>> data = pd.read_excel('./data/Belgian_lung_cancer.xlsx', 
         ...                      sheetname = ['response', 'rates'], index_col = 0)
         >>> import apc
         >>> model = apc.Model()
@@ -1169,8 +1170,104 @@ class Model:
         
         self.plotted_data_sums = fig
     
-    #def plot_heatmap(self, simplify_ranges='mean'):
+    def _vector_to_array(self, col_vector, space):
+        """
+        Takes a 'data_vector' with one column and maps it into a two-dimensional
+        array in 'space', e.g. 'CP' for cohort-period.
+        """
+        row_idx, col_idx = space[0], space[1]
+        space_dict = {'A': 'Age', 'P': 'Period', 'C': 'Cohort'}
         
+        array = col_vector.reset_index().pivot(index=space_dict[row_idx],
+                                               columns=space_dict[col_idx],
+                                               values=col_vector.name)
         
+        return array
+    
+    
+    def plot_data_heatmaps(self, simplify_ranges='mean', space=None, figsize=None,
+                           **kwargs):
+        """
         
+        Heatmap plot of data.
         
+        Produces heatmaps of the data for responses, doses and rates, if applicable. 
+        The user can choose what space to plot the heatmaps in, e.g. 'AC' got age-cohort
+        space. 
+        
+        Parameters
+        ----------
+        
+        simplify_ranges : {'start', 'mean', 'end', False}, optional
+                          Default is 'mean'. If the time indices are ranges, such as 
+                          1955-1959, this determines if and how those should be 
+                          transformed. Allows for prettier axis labels.
+        
+        figsize : float tuple or list, optional
+                  Specifies the figure size. If left empty matplotlib determines this
+                  internally.
+        
+        space : {'AC', 'AP', 'PA', 'PC', 'CA', 'CP'}, optional
+                Specifies what goes on the axes (A = Age, P = period, C = cohort). 
+                By default this is set to 'self.data_format'.
+            
+        **kwargs : any kwargs that seaborn.heatmap can handle, optional
+                   The kwargs are fed through to seaborn.heatmap. Note that these are
+                   applied to all heatmap plots symmetrically.
+                   
+        Returns
+        -------
+        
+        Matplotlib figure attached to self.plotted_data_heatmaps
+        
+        Examples
+        --------
+
+        >>> import pandas as pd
+        >>> data = pd.read_excel('./data/Belgian_lung_cancer.xlsx', 
+        ...                      sheetname = ['response', 'rates'], index_col = 0)
+        >>> import apc
+        >>> model = apc.Model()
+        >>> model.data_from_df(data['response'], rate=data['rates'], 
+        ...                    data_format='AP')
+        >>> model.plot_data_heatmaps()
+        
+        """    
+        
+        try:
+            data_vector = self.data_vector
+        except AttributeError:
+            raise AttributeError("Could not find 'data_vector', run " + 
+                                 "Model().data_from_df() first.")
+        
+        if space is None:
+            space = self.data_format
+        
+        idx_names = data_vector.index.names
+        
+        if simplify_ranges:
+            _simplify_range = self._simplify_range
+            data_vector = data_vector.reset_index()
+            data_vector[idx_names] = data_vector[idx_names].apply(
+                lambda col: _simplify_range(col, simplify_ranges))
+            data_vector.set_index(idx_names, inplace=True)
+        
+        fig, ax = plt.subplots(nrows=1, ncols=data_vector.shape[1], sharey=True,
+                               figsize=None)        
+
+        for i, col in enumerate(data_vector.columns):
+            try:
+                active_ax = ax[i]
+            except TypeError:
+                active_ax = ax
+            _vector_to_array = self._vector_to_array
+            col_vector = data_vector[col]
+            col_array = _vector_to_array(col_vector, space)
+            sns.heatmap(ax=active_ax, data=col_array, **kwargs)   
+            active_ax.set_title(col_vector.name)
+            if i > 0:
+                active_ax.set_ylabel('')
+            
+        fig.tight_layout()
+        
+        self.plotted_data_heatmaps = fig
