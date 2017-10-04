@@ -235,7 +235,7 @@ class Model:
         def _append_third_index(data_vector, data_format, time_adjust):
             """
             Adds the third time-scale to the data_vector. Can currently handle
-            integer valued pure dates (e.g. 1 or 2017) or ranges (2010-2015)
+            integer valued pure dates (e.g. 1 or 2017) or ranges (2010-2015).
             """
             index = data_vector.index
             
@@ -249,6 +249,10 @@ class Model:
                            # Converts back to ranges if needed
                            apply(lambda x: '-'.join(x), axis=1))
                 per_idx.name = 'Period'
+                try:
+                    per_idx = per_idx.astype(int)
+                except ValueError:
+                    pass
                 data_vector = data_vector.set_index(per_idx, append=True)
             elif data_format in ('AP', 'PA'):
                 age_idx = (pd.Series(index.get_level_values(level = 'Age')).
@@ -258,6 +262,10 @@ class Model:
                 coh_idx = ((per_idx - age_idx.loc[:,::-1].values + time_adjust).
                            astype(str).apply(lambda x: '-'.join(x), axis=1))
                 coh_idx.name = 'Cohort'
+                try:
+                    coh_idx = coh_idx.astype(int)
+                except ValueError:
+                    pass
                 data_vector = data_vector.set_index(coh_idx, append=True)
             else:
                 per_idx = (pd.Series(index.get_level_values(level = 'Period')).
@@ -267,6 +275,10 @@ class Model:
                 age_idx = ((per_idx - coh_idx.values + time_adjust).astype(str).
                           apply(lambda x: '-'.join(x), axis=1))
                 age_idx.name = 'Age'
+                try:
+                    age_idx = age_idx.astype(int)
+                except ValueError:
+                    pass
                 data_vector = data_vector.set_index(age_idx, append=True)
             
             return data_vector
@@ -279,6 +291,8 @@ class Model:
             defining trapezoid characteristics.
             """
             data_vector = data_vector.dropna()
+            # Because dropna does not remove old index labels we have to execute this:
+            data_vector = data_vector.reset_index().set_index(data_vector.index.names)
             
             ac_array = data_vector.reset_index().pivot(
                 index='Age', columns='Cohort', values='Cohort').isnull()
