@@ -197,5 +197,3 @@ sorted indices. A possible, if ugly, fix could be to pad the ranges with zeros a
 *   Clayton, D. and Schifflers, E. (1987) Models for temperoral variation in cancer rates. I: age-period and age-cohort models. Statistics in Medicine 6, 449-467.
 *   Taylor, G.C., Ashe, F.R. (1983) Second moments of estimates of outstanding claims Journal of Econometrics 23, 37-61
 
- of RBNS and IBNR claims using claim amounts and claim counts ASTIN Bulletin 40, 871-887
-
