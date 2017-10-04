@@ -17,9 +17,10 @@ be expanded quickly to the functionality of the last version 0.1.0.
 
 1. Specify a model: ``model = Model()``
 2. Attach the data: ``model.data_from_df(pandas.DataFrame)``
-3. Plot data sunms: ``model.plot_data_sums()``
-4. Fit the model: ``model.fit(family, predictor)``
-5. Fit a deviance table to check for valid reductions: ``model.fit_table()``
+3. Plot data sums: ``model.plot_data_sums()``
+4. Plot data heatmaps: ``model.plot_data_heatmaps()``
+5. Fit the model: ``model.fit(family, predictor)``
+6. Fit a deviance table to check for valid reductions: ``model.fit_table()``
 
 ## Example
 
@@ -86,6 +87,25 @@ model.plotted_data_sums
 This function includes functionality to transform index ranges into integer indices to 
 allow for prettier axis labels. We can choose to transform to start, mean, or end of the 
 range, or to keep the range labels.
+
+Another plot we can make is a heatmap.
+```
+model.plot_data_heatmaps(simplify_ranges=False)
+
+model.plotted_data_heatmaps
+```
+![data_heatmap_plot](https://user-images.githubusercontent.com/25103918/31187946-63e16800-a901-11e7-8541-26831a80a2ad.png)
+
+We can also easily change the plotting space. For instance, if we prefer to plot in 
+age-cohort rather than age-period space we can do this like this.
+```
+model.plot_data_heatmaps(space='AC')
+
+model.plotted_data_heatmaps
+```
+![data_heatmap_plot_AC_space](https://user-images.githubusercontent.com/25103918/31188021-9d56d9da-a901-11e7-9f1a-7d417a33ca12.png)
+
+
 
 Next, we can fit a model to the data. For example, a log-normal model for the rates
 with an age-period-cohort predictor is fit like this
