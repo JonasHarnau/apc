@@ -843,3 +843,117 @@ class Model:
                 setattr(self, key, value)
         else:
             return output
+
+        
+    def fit_table(self, family=None, reference_predictor=None, design_components=None, 
+                  attach_to_self=True):
+        
+        if design_components is None:
+            self._get_design_components()
+            design_components = self._design_components
+        
+        if family is None:
+            try:
+                family = self.family
+            except AttributeError:
+                raise AttributeError("Could not infer 'family'. Either specify as " +
+                                     "input or fit a model first.")
+            
+        if reference_predictor is None:
+            try:
+                reference_predictor = self.predictor
+            except AttributeError:
+                raise AttributeError("Could not infer 'reference_predictor'. Either " + 
+                                     "specify as input or fit a model first")
+        
+        if reference_predictor is "APC": 
+            sub_predictors = ["AP", "AC", "PC", "Ad", "Pd", "Cd", "A", "P", "C", 
+                              "t", "tA", "tP", "tC", "1"]
+        elif reference_predictor is "AP":
+            sub_predictors = ["Ad", "Pd", "A", "P", "t", "tA", "tP", "1"]
+        elif reference_predictor is "AC": 
+            sub_predictors = ["Ad", "Cd", "A", "C", "t", "tA", "tC", "1"]
+        elif reference_predictor is "PC": 
+            sub_predictors = ["Pd", "Cd", "P", "C", "t", "tP", "tC", "1"]
+        elif reference_predictor is "Ad": 
+            sub_predictors = ["A", "t", "tA", "1"]
+        elif reference_predictor is "Pd": 
+            sub_predictors = ["P", "t", "tP", "1"]
+        elif reference_predictor is "Cd": 
+            sub_predictors = ["C", "t", "tC", "1"]
+        elif reference_predictor is "A":
+            sub_predictors = ["tA", "1"]
+        elif reference_predictor is "P": 
+            sub_predictors = ["tP", "1"]
+        elif reference_predictor is "C": 
+            sub_predictors = ["tC", "1"]
+        elif reference_predictor is "t": 
+            sub_predictors = ["tA", "tP", "tC", "1"]
+        
+        def _fill_row(ref_fit, sub_fit):
+            
+            family = ref_fit['family']
+            reference_predictor = ref_fit['predictor']
+            
+            ref_deviance = ref_fit['deviance']
+            sub_deviance = sub_fit['deviance']
+            ref_df = ref_fit['df_resid']
+            sub_df = sub_fit['df_resid']
+            try:
+                sub_aic = sub_fit['aic']
+            except KeyError:
+                pass
+            
+            if ref_fit['predictor'] == sub_fit['predictor']:
+                LR = np.nan
+                df = np.nan
+                p_LR = np.nan
+            else:
+                LR = sub_deviance - ref_deviance
+                df = sub_df - ref_df
+                p_LR = 1 - stats.chi2.cdf(LR, df)
+            
+            if family in ("gaussian_rates", "gaussian_response", 
+                          "log_normal_rates", "log_normal_response"):
+                keys = ('-2logL', 'df_resid', 
+                        'LR_vs_{}'.format(reference_predictor), 
+                        'df_vs_{}'.format(reference_predictor), 
+                        'P>chi_sq', 'aic')
+                values = (sub_deviance, sub_df, LR, df, p_LR, sub_aic)
+            elif family is 'poisson_response':
+                p_deviance = 1 - stats.chi2.cdf(sub_deviance, sub_df)
+                keys = ('deviance', 'df_resid', 'P>chi_sq', 
+                        'LR_vs_{}'.format(reference_predictor), 
+                        'df_vs_{}'.format(reference_predictor))
+                values = (sub_deviance, sub_df, p_deviance, LR, df, p_LR)                
+            elif family is 'od_poisson_response':
+                if ref_fit['predictor'] == sub_fit['predictor']:
+                    F = np.nan
+                    p_F = np.nan
+                    p_deviance = 1 - stats.chi2.cdf(sub_deviance, sub_df)
+                else:                    
+                    F = (LR/df) / (ref_deviance/ref_df)
+                    p_F = 1 - stats.f.cdf(F, df, ref_df)
+                    p_deviance = np.nan
+                keys = ('deviance', 'df_resid', 'P>chi_sq', 
+                        'LR_vs_{}'.format(reference_predictor), 
+                        'df_vs_{}'.format(reference_predictor), 
+                        'F_vs_{}'.format(reference_predictor),
+                        'P>F')
+                values = (sub_deviance, sub_df, p_deviance, LR, df, F, p_F)
+                
+            return collections.OrderedDict(zip(keys, values))
+        
+        ref_fit = self.fit(family, reference_predictor, design_components, 
+                               attach_to_self=False)
+        
+        deviance_table = pd.DataFrame([
+            _fill_row(ref_fit, self.fit(
+                family, sub_pred, design_components, attach_to_self=False)
+                     ) for sub_pred in [reference_predictor] + sub_predictors],
+            index = [reference_predictor] + sub_predictors)
+        
+        if attach_to_self:
+            self.deviance_table = deviance_table
+        else:
+            return deviance_table

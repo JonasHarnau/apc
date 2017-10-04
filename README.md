@@ -18,6 +18,7 @@ be expanded quickly to the functionality of the last version 0.1.0.
 1. Specify a model: ``model = Model()``
 2. Attach the data: ``model.data_from_df(pandas.DataFrame)``
 3. Fit the model: ``model.fit(family, predictor)``
+4. Fit a deviance table to check for valid reductions: ``model.fit_table()``
 
 ## Example
 
@@ -113,6 +114,53 @@ dd_coh_1931-1939 -0.400922  0.291071  -1.377401  1.683882e-01
 dd_coh_1936-1944  0.732671  0.335289   2.185191  2.887488e-02
 dd_coh_1941-1949 -1.053534  0.430449  -2.447520  1.438430e-02
 ```
+
+We can check if there are valid reductions from the APC predictor by evaluating 
+a deviance table.
+```
+model.fit_table()
+```
+We inspect the results 
+```
+print(model.deviance_table)
+
+         -2logL  df_resid   LR_vs_APC  df_vs_APC      P>chi_sq         aic
+APC  -44.854193        18         NaN        NaN           NaN    7.145807
+AP   -28.997804        30   15.856389       12.0  1.979026e-01   -0.997804
+AC   -43.453528        20    1.400664        2.0  4.964203e-01    4.546472
+PC    12.631392        27   57.485584        9.0  4.079167e-09   46.631392
+Ad   -28.042198        32   16.811994       14.0  2.663353e-01   -4.042198
+Pd    47.605631        39   92.459824       21.0  6.054524e-11   57.605631
+Cd    12.710530        29   57.564723       11.0  2.618204e-08   42.710530
+A    -14.916745        33   29.937447       15.0  1.214906e-02    7.083255
+P    165.610725        40  210.464918       22.0  0.000000e+00  173.610725
+C     88.261366        30  133.115559       12.0  0.000000e+00  116.261366
+t     47.774702        41   92.628894       23.0  2.562911e-10   53.774702
+tA    50.423353        42   95.277546       24.0  1.896069e-10   54.423353
+tP   165.622315        42  210.476508       24.0  0.000000e+00  169.622315
+tC    98.099334        42  142.953526       24.0  0.000000e+00  102.099334
+1    165.809402        43  210.663595       25.0  0.000000e+00  167.809402
+```
+We can see that for example an age-cohort model (``AC``) seems to be a valid reduction.
+A likelihood ratio test yields a p-value of close to 0.5. 
+We can check for further reductions from the age-cohort model.
+```
+dev_table_AC = model.fit_table(reference_predictor='AC', attach_to_self=False)
+
+print(dev_table_AC)
+
+        -2logL  df_resid    LR_vs_AC  df_vs_AC      P>chi_sq         aic
+AC  -43.453528        20         NaN       NaN           NaN    4.546472
+Ad  -28.042198        32   15.411330      12.0  2.197089e-01   -4.042198
+Cd   12.710530        29   56.164058       9.0  7.302826e-09   42.710530
+A   -14.916745        33   28.536783      13.0  7.610743e-03    7.083255
+C    88.261366        30  131.714894      10.0  0.000000e+00  116.261366
+t    47.774702        41   91.228230      21.0  9.899548e-11   53.774702
+tA   50.423353        42   93.876881      22.0  7.438616e-11   54.423353
+tC   98.099334        42  141.552862      22.0  0.000000e+00  102.099334
+1   165.809402        43  209.262930      23.0  0.000000e+00  167.809402
+```
+We could now consider a further reduction to an age-drift model (``Ad``) with a p-value of 0.22.
 
     
 ## Included Data
