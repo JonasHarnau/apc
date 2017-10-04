@@ -82,6 +82,7 @@ model.plot_data_sums()
 model.plotted_data_sums
 ```
 ![data_sum_plot](https://user-images.githubusercontent.com/25103918/31182586-458c3aa6-a8f2-11e7-8953-8b8f036a99a3.png)
+
 This function includes functionality to transform index ranges into integer indices to 
 allow for prettier axis labels. We can choose to transform to start, mean, or end of the 
 range, or to keep the range labels.
