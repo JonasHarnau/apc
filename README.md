@@ -216,6 +216,15 @@ for instance with ``AC`` predictor.
 
 _Source: Taylor and Ashe (1983)_
 
+### Loss VNJ
+
+Data for insurance run-off triangle of paid amounts (units not reported). 
+Data from Codan, Danish subsiduary of Royal & Sun Alliance. 
+It is a portfolio of third party liability from motor policies. The time units are in years. 
+Apart from the paid amounts, counts for the number of reported claims are available. 
+
+_Source: Verrall et al. (2010)._
+
 ## Known Issues
 
 * Index-ranges, such as _1955-1959_ in ``data_vector`` as output by ``Model().data_as_df()``
@@ -226,6 +235,9 @@ sorted indices. A possible, if ugly, fix could be to pad the ranges with zeros a
 
 ## References
 
-*   Clayton, D. and Schifflers, E. (1987) Models for temperoral variation in cancer rates. I: age-period and age-cohort models. Statistics in Medicine 6, 449-467.
-*   Taylor, G.C., Ashe, F.R. (1983) Second moments of estimates of outstanding claims Journal of Econometrics 23, 37-61
+* Clayton, D. and Schifflers, E. (1987) Models for temperoral variation in cancer rates. I: age-period and age-cohort models. Statistics in Medicine 6, 449-467.
+* Kuang, D., Nielsen, B. and Nielsen, J.P. (2008) Identification of the age-period-cohort model and the extended chain ladder model. Biometrika 95, 979-986.
+* Nielsen, B. (2015) apc: An R package for age-period-cohort analysis. R Journal 7, 52-64. _Download:_ [Open Access](https://journal.r-project.org/archive/2015-2/nielsen.pdf).
+* Taylor, G.C., Ashe, F.R. (1983) Second moments of estimates of outstanding claims Journal of Econometrics 23, 37-61
+* Verrall R, Nielsen JP, Jessen AH (2010) Prediction of RBNS and IBNR claims using claim amounts and claim counts ASTIN Bulletin 40, 871-887
 
