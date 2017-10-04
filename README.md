@@ -19,6 +19,7 @@ be expanded quickly to the functionality of the last version 0.1.0.
 2. Attach the data: ``model.data_from_df(pandas.DataFrame)``
 3. Plot data sums: ``model.plot_data_sums()``
 4. Plot data heatmaps: ``model.plot_data_heatmaps()``
+5. Plot data groups of one time-scale across another: ``model.plot_data_within()``
 5. Fit the model: ``model.fit(family, predictor)``
 6. Fit a deviance table to check for valid reductions: ``model.fit_table()``
 
@@ -104,6 +105,16 @@ model.plot_data_heatmaps(space='AC')
 model.plotted_data_heatmaps
 ```
 ![data_heatmap_plot_AC_space](https://user-images.githubusercontent.com/25103918/31188021-9d56d9da-a901-11e7-9f1a-7d417a33ca12.png)
+
+
+Another way to look at the data is to plot groups of one time-scale across another. 
+```
+model.plot_data_within(space=')
+
+model.plotted_data_within['response]
+```
+![data_within_plot](https://user-images.githubusercontent.com/25103918/31203174-e7cd68b2-a933-11e7-8ac0-4615404d1581.png)
+
 
 
 
