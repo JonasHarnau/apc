@@ -184,10 +184,18 @@ for instance with ``AC`` predictor.
 
 _Source: Taylor and Ashe (1983)_
 
+## Known Issues
+
+* Index-ranges, such as _1955-1959_ in ``data_vector`` as output by ``Model().data_as_df()``
+are strings. Thus, sorting may yield unintuitive results for breaks in length of the range
+components. For example, sorting 1-3, 4-9, 10-11 yields the ordering 1-3, 10-11, 4-9. 
+This results in mis-labeling of the coefficient names later on since those are taken from
+sorted indices. A possible, if ugly, fix could be to pad the ranges with zeros as needed. 
+
 ## References
 
--   Clayton, D. and Schifflers, E. (1987) Models for temperoral variation in cancer rates. I: age-period and age-cohort models. Statistics in Medicine 6, 449-467.
--   Taylor, G.C., Ashe, F.R. (1983) Second moments of estimates of outstanding claims Journal of Econometrics 23, 37-61
+*   Clayton, D. and Schifflers, E. (1987) Models for temperoral variation in cancer rates. I: age-period and age-cohort models. Statistics in Medicine 6, 449-467.
+*   Taylor, G.C., Ashe, F.R. (1983) Second moments of estimates of outstanding claims Journal of Econometrics 23, 37-61
 
  of RBNS and IBNR claims using claim amounts and claim counts ASTIN Bulletin 40, 871-887
 
