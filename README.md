@@ -111,7 +111,7 @@ Another way to look at the data is to plot groups of one time-scale across anoth
 ```
 model.plot_data_within(space=')
 
-model.plotted_data_within['response]
+model.plotted_data_within['response']
 ```
 ![data_within_plot](https://user-images.githubusercontent.com/25103918/31203174-e7cd68b2-a933-11e7-8ac0-4615404d1581.png)
 
