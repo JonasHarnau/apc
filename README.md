@@ -109,7 +109,7 @@ model.plotted_data_heatmaps
 
 Another way to look at the data is to plot groups of one time-scale across another. 
 ```
-model.plot_data_within(space=')
+model.plot_data_within(figsize=(10,6))
 
 model.plotted_data_within['response']
 ```
