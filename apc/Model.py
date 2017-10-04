@@ -1092,7 +1092,47 @@ class Model:
     def plot_data_sums(self, simplify_ranges='mean', logy=False,
                        figsize=None):
         """
+    
+        Plot for data sums by age, period and cohort.
+        
+        Produces plots showing age, period and cohort sums for responses, doses and rates
+        (if available).
+        
+        
+        Parameters
+        ----------
+        
         simplify_ranges : {'start', 'mean', 'end', False}, optional
+                          Default is 'mean'. If the time indices are ranges, such as 
+                          1955-1959, this determines if and how those should be 
+                          transformed. Allows for prettier axis labels.
+        
+        
+        logy : bool, optional
+               Specifies whether the y-axis uses a log-scale.  (Default is 'False')
+                    
+        figsize : float tuple or list, optional
+                  Specifies the figure size. If left empty matplotlib determines this
+                  internally.
+        
+        
+        Returns
+        -------
+        
+        Matplotlib figure attached to self.plotted_data_sums
+        
+        Examples
+        --------
+
+        >>> import pandas as pd
+        >>> data = pd.read_excel('./data/data_Belgian_lung_cancer.xlsx', 
+        ...                      sheetname = ['response', 'rates'], index_col = 0)
+        >>> import apc
+        >>> model = apc.Model()
+        >>> model.data_from_df(data['response'], rate=data['rates'], 
+        ...                    data_format='AP')
+        >>> model.plot_data_sums()
+        
         """
         try:
             data_vector = self.data_vector
@@ -1128,6 +1168,8 @@ class Model:
         fig.tight_layout()
         
         self.plotted_data_sums = fig
+    
+    #def plot_heatmap(self, simplify_ranges='mean'):
         
         
         
