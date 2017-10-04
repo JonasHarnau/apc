@@ -3,6 +3,7 @@ import pandas as pd
 import statsmodels.api as sm
 from scipy import stats
 import collections
+import matplotlib.pyplot as plt
 
 class Model:
     """
@@ -1059,3 +1060,75 @@ class Model:
             self.deviance_table = deviance_table
         else:
             return deviance_table
+    
+    def _simplify_range(self, col_range, simplify_ranges):
+        """
+        Simplifies ranges such as 1955-1959 as indicated by 'simplify_ranges'.
+        
+        Useful for plotting to obtain more concise axes labels.
+        
+        Parameters
+        ----------
+        
+        simplify_ranges : {'start', 'mean', 'end', False}
+        
+        """
+        try:
+            col_from_to = col_range.str.split('-', expand=True).astype(int)
+        except AttributeError: #not a column range            
+            return col_range
+        if simplify_ranges == 'start':
+            col_simple = col_from_to.iloc[:,0].astype(int)
+        elif simplify_ranges == 'end':
+            col_simple = col_from_to.iloc[:,1].astype(int)
+        elif simplify_ranges == 'mean':
+            col_simple = col_from_to.mean(axis=1).round().astype(int)
+        else:
+            raise ValueError("'simplify_range' must be one of 'start', " +
+                             "'mean', 'end' or False")
+        
+        return col_simple
+    
+    def plot_data_sums(self, simplify_ranges='mean', logy=False,
+                       figsize=None):
+        """
+        simplify_ranges : {'start', 'mean', 'end', False}, optional
+        """
+        try:
+            data_vector = self.data_vector
+        except AttributeError:
+            raise AttributeError("Could not find 'data_vector', run " + 
+                                 "Model().data_from_df() first.")
+            
+        idx_names = data_vector.index.names
+        
+        if simplify_ranges:
+            _simplify_range = self._simplify_range
+            data_vector = data_vector.reset_index()
+            data_vector[idx_names] = data_vector[idx_names].apply(
+                lambda col: _simplify_range(col, simplify_ranges))
+            data_vector.set_index(idx_names, inplace=True)
+        
+        fig, ax = plt.subplots(nrows=data_vector.shape[1], ncols=3, 
+                               sharex='col', figsize=None)
+        
+        for i,idx_name in enumerate(idx_names):
+            data_sums = data_vector.groupby(idx_name).sum()
+            try:
+                data_sums.plot(subplots=True, ax= ax[:,i], logy=logy, legend=False)
+            except IndexError:
+                data_sums.plot(subplots=True, ax= ax[i], logy=logy, legend=False)
+        
+        for i, col_name in enumerate(data_sums.columns):
+            try:
+                ax[i,0].set_ylabel(col_name)
+            except IndexError:
+                ax[0].set_ylabel(col_name)
+            
+        fig.tight_layout()
+        
+        self.plotted_data_sums = fig
+        
+        
+        
+        
