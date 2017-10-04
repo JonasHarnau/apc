@@ -1271,3 +1271,147 @@ class Model:
         fig.tight_layout()
         
         self.plotted_data_heatmaps = fig
+
+
+    def plot_data_within(self, n_groups=5, logy=False, aggregate='mean', 
+                         figsize=None, simplify_ranges=False):
+        """
+    
+        Plot each timescale within the others, e.g. cohort groups over age.
+        
+        Produces a total of six plots for each of response, dose, and rate (if applicable).
+        These plots are sometimes used to gauge how many of the age, period, cohort factors
+        are needed: If lines are parallel when dropping one index the corresponding factor
+        may not be needed. In practice these plots should possibly be used with care.
+        
+        Parameters
+        ----------
+        
+        n_groups : int or 'all', optional
+                   The number of groups plotted within each time scale, computed either
+                   be summing or aggregating existing groups (determined by 'aggregate').
+                   The advantage is that the plots become less cluttered if there are
+                   fewer groups to show. Default is 5. 
+        
+        aggregate : {'mean', 'sum'}, optional
+                    Determines whether aggregation to reduce the number of groups is done
+                    by summings or averaging. Default is 'mean'.        
+        
+        simplify_ranges : {'start', 'mean', 'end', False}, optional
+                          Default is 'mean'. If the time indices are ranges, such as 
+                          1955-1959, this determines if and how those should be 
+                          transformed. Allows for prettier axis labels. Default is 'False'.
+        
+        logy : bool, optional
+               Specifies whether the y-axis uses a log-scale. Default is 'False'.
+                    
+        figsize : float tuple or list, optional
+                  Specifies the figure size. If left empty matplotlib determines this
+                  internally.
+        
+        Notes
+        -----
+        
+        Parts of the description are taken from the R package apc.
+        
+        
+        Returns
+        -------
+        
+        Matplotlib figure(s) attached to self.plotted_data_within. If dose/rate is available
+        this is a dictionary with separate figures for response, dose, and rate as values.
+        
+        Examples
+        --------
+        
+        >>> import pandas as pd
+        >>> data = pd.read_excel('./data/Belgian_lung_cancer.xlsx', 
+        ...                      sheetname = ['response', 'rates'], index_col = 0)
+        >>> import apc
+        >>> model = apc.Model()
+        >>> model.data_from_df(data['response'], rate=data['rates'], 
+        ...                    data_format='AP')
+        >>> model.plot_data_within(figsize=(10,6))
+                
+        """
+                
+        try:
+            data_vector = self.data_vector
+        except AttributeError:
+            raise AttributeError("Could not find 'data_vector', call " + 
+                                 "Model().data_from_df() first.")
+        
+        self.plotted_data_within = dict()
+        
+        def _plot_vector_within(self, col_vector, n_groups, logy, 
+                                simplify_ranges, aggregate):
+            
+            fig, ax = plt.subplots(nrows=2, ncols=3, figsize=figsize, 
+                                   sharex='col', sharey=True)
+            ax[0,0].set_ylabel(col_vector.name)
+            ax[1,0].set_ylabel(col_vector.name)
+            ax_flat = ax.T.flatten() # makes it easier to iterate
+        
+            plot_type_dict = {'awc': ('A', 'C'), 
+                              'awp': ('A', 'P'),
+                              'pwa': ('P', 'A'),
+                              'pwc': ('P', 'C'),
+                              'cwa': ('C', 'A'),
+                              'cwp': ('C', 'P')}
+            
+            _vector_to_array = self._vector_to_array
+
+            j = 0
+            for x, y in plot_type_dict.values():
+                array = _vector_to_array(col_vector, space=x+y) 
+                idx_name = array.index.name
+                
+                if simplify_ranges:
+                    _simplify_range = self._simplify_range
+                    array = array.reset_index()
+                    array[idx_name] = _simplify_range(array[idx_name], 
+                                                      simplify_ranges)
+                    array.set_index(idx_name, inplace=True)
+
+                #adjust for the number of groups
+                if n_groups is 'all' or n_groups >= array.shape[1]:
+                    group_size = 1
+                else:
+                    group_size = max(1,round(array.shape[1]/n_groups))
+                
+                if group_size > 1:
+                    array_new = pd.DataFrame(None, index=array.index)
+                    for i in range(0, array.shape[1], group_size):
+                        idx_in_group = array.columns[i:i+group_size]
+                        try:
+                            start = idx_in_group[0].split('-')[0]
+                            end = idx_in_group[-1].split('-')[1]
+                        except:
+                            start = str(idx_in_group[0])
+                            end = str(idx_in_group[-1])
+                        new_idx = '-'.join([start, end])
+                        if aggregate == 'mean':
+                            array_new[new_idx] = array[idx_in_group].mean(axis=1)
+                        elif aggregate == 'sum':
+                            array_new[new_idx] = array[idx_in_group].mean(axis=1)
+                        else:
+                            raise ValueError("'aggregate' must by one of " + 
+                                             "'mean' or 'sum'")
+                else:
+                    array_new = array
+                    
+                array_new.plot(ax=ax_flat[j], logy=logy)
+                y_dict = {'A': 'Age', 'C': 'Cohort', 'P': 'Period'}
+                ax_flat[j].legend(title=y_dict[y])
+                j += 1
+                
+            fig.tight_layout() 
+            self.plotted_data_within[col_vector.name] = fig
+    
+        for i,col in enumerate(data_vector.columns):
+                _plot_vector_within(self, data_vector[col], n_groups, logy, 
+                                    simplify_ranges, aggregate)
+        
+        if len(self.plotted_data_within) == 1:
+            self.plotted_data_within = self.plotted_data_within[data_vector.columns[0]]
+            
