@@ -293,6 +293,9 @@ Known Issues
    This results in mis-labeling of the coefficient names later on since
    those are taken from sorted indices. A possible, if ugly, fix could
    be to pad the ranges with zeros as needed.
+-  When calling ``import apc`` there may be a deprecation warning raised
+   by ``pandas``. This is the result of importing ``statsmodels`` and
+   will hopefully be resolved with its next release.
 
 References
 ----------
