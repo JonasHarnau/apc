@@ -10,8 +10,8 @@ by Nielsen (2015) who also discusses the use of the R package of the same name.
 ## Latest changes
 
 Version 0.2.0 is a complete rething of the package. It introduces the ``Model`` Class as
-the primary object of interest. Currently, this comes with limited functionality which will
-be expanded quickly to the functionality of the last version 0.1.0.  
+the primary object of interest. This has now been expanded to match the functionality of 
+the last version 0.1.0. As such, 0.2.0 is unfortunately **not** downward compatible!
 
 ## Usage
 
