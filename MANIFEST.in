@@ -1,3 +1,12 @@
 include README.rst
 include LICENSE.txt
+
+include apc/data/__init__.py
 include apc/data/Belgian_lung_cancer.xlsx
+include apc/data/pre_formatted.py
+
+include apc/tests/__init__.py
+include apc/tests/test_data_from_df.py
+include apc/tests/test_fit_table.py
+include apc/tests/test_fit.py
+include apc/tests/test_plots.py
