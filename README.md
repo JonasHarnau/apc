@@ -23,6 +23,10 @@ the last version 0.1.0. As such, 0.2.0 is unfortunately **not** downward compati
 5. Fit the model: ``model.fit(family, predictor)``
 6. Fit a deviance table to check for valid reductions: ``model.fit_table()``
 
+
+We can now also simulate the model: ``model.simulate(repetitions)``
+
+
 ## Example
 
 As an example, following the scheme described above we can do the following. 
