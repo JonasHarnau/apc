@@ -1414,4 +1414,101 @@ class Model:
         
         if len(self.plotted_data_within) == 1:
             self.plotted_data_within = self.plotted_data_within[data_vector.columns[0]]
+    
+    def simulate(self, repetitions, c=1, sigma2=None):
+        """
+        Simulates data for the fitted model. 
+        
+        This takes the fitted values from apc.Model().fit() as true means, potentially 
+        scaled by 'c', and simulates for the data generating process implied by the
+        model family. Currently supports 'poisson_repsonse', 'od_poisson_response',
+        'gaussian_response', and 'log_normal_response'. For more info on 'sigma2' see
+        below.
+        
+        Parameters
+        ----------
+        
+        repetitions : int
+                      The number of draws.
+                      
+        c : float, optional
+            Proportionality factor for the means. Multiplies the fitted values.
+            Default is 1.
+            
+        sigma2 : float > 0 (>=1 for 'od_poisson_repsonse'), optional
+                 For 'gaussian_response' and 'log_normal_response', this is the variance
+                 of the (log-)Gaussian distribution. For 'od_poisson_response', this is 
+                 the over-dispersion. Ignored for 'poisson_response'. 
+                 Default for 'gaussian_response' and 'log_normal_response' is Model().s2.
+                 Default for 'od_poisson_response' is Model().deviance/Model().df_resid.
+        
+        Returns
+        -------
+        
+        pandas.DataFrame of draws. The index of this dataframe corresponds to the index 
+        of Model().fitted_values. The draws are in the columns. 
+        
+        Notes
+        -----
+        Over-dispersed Poisson data is simulated as compound Poisson-Gamma.
+                
+        Examples
+        --------
+        
+        Log-normal
+        >>> import apc
+        >>> data = apc.loss_VNJ()
+        >>> model = apc.Model()
+        >>> model.data_from_df(data, time_adjust=1)
+        >>> model.fit(family='log_normal_response', predictor='AC')
+        >>> model.simulate(repetitions=10)
+        
+        Over-dispersed Poisson with scaled fitted values and over-dispersion = 100
+        >>> import apc
+        >>> data = apc.loss_TA()
+        >>> model = apc.Model()
+        >>> model.data_from_df(data, time_adjust=1)
+        >>> model.fit(family='od_poisson_response', predictor='AC')
+        >>> model.simulate(repetitions=10, c=0.5, sigma2=100)
+        
+        """
+        
+        def _dgp(self, means, sigma2, repetitions):
+            """Specifies the data generating process"""
+            if (self.family == 'poisson_response' 
+                or self.family == 'od_poisson_response' and sigma2 == 1):
+                draws = np.random.poisson(means, size=(repetitions, self.n))
+            elif self.family == 'od_poisson_response':
+                if sigma2 is None:
+                    sigma2 = self.deviance/self.df_resid
+                if sigma2 > 1:
+                    scale = sigma2 - 1
+                    shape = 1/scale
+                    draws = np.random.gamma(shape * np.random.poisson(means, 
+                                                                      size=(repetitions, self.n)
+                                                                     ), 
+                                            scale)
+                else:
+                    raise ValueError('sigma2 must be >=1.')
+            elif self.family == 'gaussian_response':
+                if sigma2 is None:
+                    sigma2 = self.s2
+                draws = np.random.normal(means, sigma2, size=(repetitions, self.n))
+            elif self.family == 'log_normal_response':
+                if sigma2 is None:
+                    sigma2 = self.s2
+                draws = np.random.lognormal(np.log(means), sigma2, size=(repetitions, self.n))
+            else:
+                raise ValueError("Currently only supports simulations for " +
+                                 "'poisson_response', 'od_poisson_response', " +
+                                 "'gaussian_response', 'log_normal_response'")
+            return draws
+        
+        if c is None:
+            means = self.fitted_values
+        else:
+            means = float(c) * self.fitted_values
+        draws = pd.DataFrame(_dgp(self, means, sigma2, repetitions).T,
+                            index = means.index)
+        return draws
             
