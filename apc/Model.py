@@ -1511,4 +1511,20 @@ class Model:
         draws = pd.DataFrame(_dgp(self, means, sigma2, repetitions).T,
                             index = means.index)
         return draws
-            
+    
+    
+    def sub_sample(self, age_from_to=(None,None), 
+                   per_from_to=(None,None), coh_from_to=(None,None)):
+        """
+        Takes the data vector and throws out the ages, periods, and cohorts
+        outside the indicated range.
+        """
+        data = model.data_vector
+        if data.index.names != ['Age', 'Cohort', 'Period']:
+            data = data.reorder_levels(['Age', 'Cohort', 'Period']).sort_index()
+
+        idx = pd.IndexSlice
+        return data.loc[idx[age_from_to[0]:age_from_to[1], 
+                            coh_from_to[0]:coh_from_to[1], 
+                            per_from_to[0]:per_from_to[1]],:]    
+        
