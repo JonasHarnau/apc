@@ -1519,7 +1519,7 @@ class Model:
         Takes the data vector and throws out the ages, periods, and cohorts
         outside the indicated range.
         """
-        data = model.data_vector
+        data = self.data_vector
         if data.index.names != ['Age', 'Cohort', 'Period']:
             data = data.reorder_levels(['Age', 'Cohort', 'Period']).sort_index()
 
