@@ -458,7 +458,7 @@ class Model:
         dd_age = pd.DataFrame(0, index = range(n), columns = dd_age_col)
         
         for i in range(anchor_index):
-            dd_age.loc[slope_age == slope_age[0] + i, i:anchor_index] = (
+            dd_age.loc[slope_age == - anchor_index + i, i:anchor_index] = (
                 np.arange(1, anchor_index - i + 1))
         
         for i in range(1, I - anchor_index):
