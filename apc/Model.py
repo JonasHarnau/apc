@@ -1415,7 +1415,7 @@ class Model:
         if len(self.plotted_data_within) == 1:
             self.plotted_data_within = self.plotted_data_within[data_vector.columns[0]]
     
-    def simulate(self, repetitions, c=1, sigma2=None):
+    def simulate(self, repetitions, c=1, sigma2=None, attach_to_self=True):
         """
         Simulates data for the fitted model. 
         
@@ -1510,7 +1510,10 @@ class Model:
             means = float(c) * self.fitted_values
         draws = pd.DataFrame(_dgp(self, means, sigma2, repetitions).T,
                             index = means.index)
-        return draws
+        if attach_to_self:
+            self.draws = draws
+        else:
+            return draws
     
     
     def sub_sample(self, age_from_to=(None,None), 
