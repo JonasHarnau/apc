@@ -211,3 +211,49 @@ def Belgian_lung_cancer():
                              index = index, columns = columns)
     
     return {'response': lung_cases, 'rate': lung_rates, 'data_format': 'AP'}
+
+def loss_BZ():
+    """
+    Loss data as pandas.DataFrame for use with Model().data_from_df(). 
+    
+    The data set is taken from Table 3.5 of Barnett & Zehnwirth (2000).
+    The data are also analysed in e.g. Kuang, Nielsen, Nielsen (2011).
+
+
+
+    Notes
+    -----
+    
+    The data description is largely taken from the R package apc.
+       
+       
+    References
+    ----------
+    
+    Barnett G, Zehnwirth B (2000) Best estimates for reserves. 
+    Proc. Casualty Actuar. Soc. 87, 245–321.
+
+    Kuang D, Nielsen B, Nielsen JP (2011) Forecasting in an extended
+    chain-ladder-type model Journal of Risk and Insurance 78, 345-359
+    
+    """
+    
+    BZ = pd.DataFrame(np.array([
+        [153638, 188412, 134534,  87456,  60348, 42404, 31238, 21252, 16622, 14440, 12200],
+        [178536, 226412, 158894, 104686,  71448, 47990, 35576, 24818, 22662, 18000, np.nan],
+        [210172, 259168, 188388, 123074,  83380, 56086, 38496, 33768, 27400, np.nan, np.nan],
+        [211448, 253482, 183370, 131040,  78994, 60232, 45568, 38000, np.nan, np.nan, np.nan],
+        [219810, 266304, 194650, 120098,  87582, 62750, 51000, np.nan, np.nan, np.nan, np.nan],
+        [205654, 252746, 177506, 129522,  96786, 82400, np.nan, np.nan, np.nan, np.nan, np.nan],
+        [197716, 255408, 194648, 142328, 105600, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+        [239784, 329242, 264802, 190400,  np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+        [326304, 471744, 375400, np.nan,  np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+        [420778, 590400, np.nan, np.nan,  np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+        [496200,  np.nan, np.nan, np.nan,  np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan],
+    ]),
+                      index = range(1977,1988), columns = range(1,12))
+    
+    BZ.index.name = 'Accident Year'
+    BZ.columns.name = 'Development Year'
+    
+    return BZ
