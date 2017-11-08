@@ -808,7 +808,6 @@ class Model:
         para_table = pd.concat((coefs_canonical, std_errs, t_stat, p_values), 
                                     axis = 1)
         df_resid = fit.df_resid
-        cov_canonical = cov_canonical
         fitted_values = fit.fittedvalues
         
         if family in ("gaussian_rates", "gaussian_response", 
@@ -830,7 +829,8 @@ class Model:
                   'family': family,
                   'design': design,
                   'deviance': deviance, 
-                  'fitted_values': fitted_values}
+                  'fitted_values': fitted_values, 
+                  'cov_canonical': cov_canonical}
         try:
             output['RSS'] = RSS
             output['sigma2'] = sigma2
