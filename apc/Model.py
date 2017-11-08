@@ -1415,7 +1415,7 @@ class Model:
         if len(self.plotted_data_within) == 1:
             self.plotted_data_within = self.plotted_data_within[data_vector.columns[0]]
     
-    def simulate(self, repetitions, c=1, sigma2=None, attach_to_self=True):
+    def simulate(self, repetitions, c=1, sigma2=None, seed=None, attach_to_self=True):
         """
         Simulates data for the fitted model. 
         
@@ -1473,8 +1473,9 @@ class Model:
         
         """
         
-        def _dgp(self, means, sigma2, repetitions):
+        def _dgp(self, means, sigma2, repetitions, seed):
             """Specifies the data generating process"""
+            np.random.seed(seed)
             if (self.family == 'poisson_response' 
                 or self.family == 'od_poisson_response' and sigma2 == 1):
                 draws = np.random.poisson(means, size=(repetitions, self.n))
@@ -1508,7 +1509,7 @@ class Model:
             means = self.fitted_values
         else:
             means = float(c) * self.fitted_values
-        draws = pd.DataFrame(_dgp(self, means, sigma2, repetitions).T,
+        draws = pd.DataFrame(_dgp(self, means, sigma2, repetitions, seed).T,
                             index = means.index)
         if attach_to_self:
             self.draws = draws
