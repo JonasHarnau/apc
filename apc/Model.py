@@ -870,7 +870,7 @@ class Model:
         
         model_design : see help for Model().fit() for a description (optional)
                        If not specified attempts to read from self.
-        
+
         design_components : pandas.DataFrame (optional)
                             Output of Model()._get_design_components(). Can 
                             speed up computations if 'fit_table' is called 
@@ -1002,6 +1002,7 @@ class Model:
             sub_deviance = sub_fit['deviance']
             ref_df = ref_fit['df_resid']
             sub_df = sub_fit['df_resid']
+            n = self.n
             try:
                 sub_aic = sub_fit['aic']
             except KeyError:
@@ -1014,14 +1015,19 @@ class Model:
             else:
                 LR = sub_deviance - ref_deviance
                 df = sub_df - ref_df
-                p_LR = 1 - stats.chi2.cdf(LR, df)
+                if family in  ("gaussian_rates", "gaussian_response", 
+                          "log_normal_rates", "log_normal_response"):
+                    F_from_lr = (np.exp(LR/n) - 1) * ref_df/df
+                    p_LR = stats.f.sf(F_from_lr, df, ref_df)
+                else:
+                    p_LR = 1 - stats.chi2.cdf(LR, df)
             
             if family in ("gaussian_rates", "gaussian_response", 
                           "log_normal_rates", "log_normal_response"):
                 keys = ('-2logL', 'df_resid', 
                         'LR_vs_{}'.format(reference_predictor), 
                         'df_vs_{}'.format(reference_predictor), 
-                        'P>chi_sq', 'aic')
+                        'P_exact', 'aic')
                 values = (sub_deviance, sub_df, LR, df, p_LR, sub_aic)
             elif family is 'poisson_response':
                 p_deviance = 1 - stats.chi2.cdf(sub_deviance, sub_df)
