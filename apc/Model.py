@@ -967,8 +967,7 @@ class Model:
             try:
                 reference_predictor = self.predictor
             except AttributeError:
-                raise AttributeError("Could not infer 'reference_predictor'. Either " + 
-                                     "specify as input or fit a model first")
+                reference_predictor= 'APC'
         
         if reference_predictor is "APC": 
             sub_predictors = ["AP", "AC", "PC", "Ad", "Pd", "Cd", "A", "P", "C", 
