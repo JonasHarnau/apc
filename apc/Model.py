@@ -870,6 +870,16 @@ class Model:
         
         model_design : see help for Model().fit() for a description (optional)
                        If not specified attempts to read from self.
+        
+        reference_predictor : {"APC", "AP", "AC", "PC", "Ad", "Pd", "Cd", 
+                               "A", "P", "C", "t", "tA", "tP", "tC"} (optional)
+                              The 'reference_predictor' determines the baseline
+                              relative to which the deviance table is computed. 
+                              All sub-models nested in the 'reference_predictor'
+                              are considered. If left empty, this is set to
+                              'Model().predictor' so the table would be computed
+                              relative to the last fitted model. If this is
+                              empty as well, it is set to 'APC'.
 
         design_components : pandas.DataFrame (optional)
                             Output of Model()._get_design_components(). Can 
@@ -905,17 +915,21 @@ class Model:
         "df_resid"
             Degrees of freedom of residual: n_obs - len(parameter). 
             
-        "P>chi_sq"
-            p-value of the deviance, -2logL, compared to a chi-square. Left out
-            in Gaussian case which has no saturated model.
-            
+        "P>chi_sq" 
+            Not included for Gaussian or log-normal families. P-value of the 
+            deviance, -2logL, or the log-likelihood ratio, "LR_vs_{ref}", compared
+            to a chi-square. 
+
+        "P_exact" 
+            Only included for Gaussian or log-normal families. Exact p-value 
+            of the log-likelihood ratio, "LR_vs_{ref}".
+
         "LR_vs_{ref}"
             The likelihood ratio statistic against the reference model.
             
-         "df_vs_{ref}"
+        "df_vs_{ref}"
             Degrees of freedom against the reference model.
-        "P>chi_sq"
-            p-value of log likelihood ratio statistic compared to a chi-square.
+        
         "aic"
             Akaike's "An Information Criterion", minus twice the maximized 
             log-likelihood plus twice the number of parameters upto a constant. 
