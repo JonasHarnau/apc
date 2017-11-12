@@ -653,8 +653,9 @@ class Model:
         RSS : float (only for Gaussian and log-normal models)
               Sum of squared residuals, on the log-scale for log-nromal models.
         
-        s2 : float (only for Gaussian and log-normal models)
-             Normal variance estimator 'RSS / df_resid'.
+        s2 : float (only for Gaussian, log-normal, and over-dispersed Poisson models)
+             For Gaussian and log-normal models this is 'RSS/df_resid'. For 
+             over-dispersed Poisson it is 'deviance/df_resid'.
         
         sigma2 : float (only for Gaussian and log-normal models)
                  Maximum likelihood normal variance estimator 'RSS / n'.
@@ -817,6 +818,9 @@ class Model:
             s2 = RSS / fit.df_resid
             deviance = fit.nobs * (1 + np.log(2 * np.pi) + np.log(sigma2))
             aic = fit.aic
+        elif family == "od_poisson_response":
+            deviance = fit.deviance
+            s2 = deviance / df_resid
         else:
             deviance = fit.deviance        
         
@@ -832,9 +836,9 @@ class Model:
                   'fitted_values': fitted_values, 
                   'cov_canonical': cov_canonical}
         try:
+            output['s2'] = s2
             output['RSS'] = RSS
             output['sigma2'] = sigma2
-            output['s2'] = s2
             output['aic'] = aic
         except NameError:
             pass
