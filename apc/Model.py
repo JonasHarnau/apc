@@ -26,7 +26,7 @@ class Model:
                 setattr(self, key, value)
 
     def data_from_df(self, response, dose=None, rate=None, 
-                     data_format=None, time_adjust=0):
+                     data_format=None, time_adjust=None):
         """    
         Arranges data into a format useable by the other functions in the package.
         
@@ -90,9 +90,9 @@ class Model:
                       through age + cohort = period + 'time_adjust'. This is
                       used to compute the missing time labels internally. If
                       this is 'None' this is set to 0 internally with one
-                      exception: if 'data_type' is any of "AC", "CA", "CL" or
-                      "trapezoid" and the minimum age and cohort labels are 1
-                      so that the minimum period is also 1.
+                      exception: if the minimum of both supplied labels is 1, 
+                      'time_adjust' is set to 1 so that that all three labels
+                      start at 1.
 
 
         Returns
@@ -218,6 +218,11 @@ class Model:
                                      dose.unstack().rename('dose'), 
                                      rate.unstack().rename('rate')], 
                                     axis=1)
+
+        if time_adjust is None and data_vector.index.min() == (1,1):
+            time_adjust = 1
+        else:
+            time_adjust = 0
 
         if not len(data_vector) == response.size:
             raise ValueError('Label mismatch between response and dose/rate.')
