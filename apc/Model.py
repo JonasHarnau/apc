@@ -959,7 +959,7 @@ class Model:
         >>> from apc.Model import Model
         >>> from apc.data.pre_formatted import loss_TA
         >>> model = Model()
-        >>> model.data_from_df(loss_TA(), time_adjust=1)
+        >>> model.data_from_df(loss_TA())
         >>> model.fit_table('od_poisson_response', 'APC')
         
         
@@ -1487,7 +1487,7 @@ class Model:
         >>> import apc
         >>> data = apc.loss_VNJ()
         >>> model = apc.Model()
-        >>> model.data_from_df(data, time_adjust=1)
+        >>> model.data_from_df(data)
         >>> model.fit(family='log_normal_response', predictor='AC')
         >>> model.simulate(repetitions=10)
         
@@ -1495,7 +1495,7 @@ class Model:
         >>> import apc
         >>> data = apc.loss_TA()
         >>> model = apc.Model()
-        >>> model.data_from_df(data, time_adjust=1)
+        >>> model.data_from_df(data)
         >>> model.fit(family='od_poisson_response', predictor='AC')
         >>> model.simulate(repetitions=10, c=0.5, sigma2=100)
         
