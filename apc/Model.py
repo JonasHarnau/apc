@@ -219,10 +219,11 @@ class Model:
                                      rate.unstack().rename('rate')], 
                                     axis=1)
 
-        if time_adjust is None and data_vector.index.min() == (1,1):
-            time_adjust = 1
-        else:
-            time_adjust = 0
+        if time_adjust is None:
+            if data_vector.index.min() == (1,1):
+                time_adjust = 1
+            else:
+                time_adjust = 0
 
         if not len(data_vector) == response.size:
             raise ValueError('Label mismatch between response and dose/rate.')
@@ -336,7 +337,8 @@ class Model:
             self.J = J
             self.L = L
             self.n = n
-            self.data_vector = data_vector          
+            self.data_vector = data_vector
+            self.time_adjust = time_adjust
                 
         _set_trapezoid_information(self, data_vector)
         
