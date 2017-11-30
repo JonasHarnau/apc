@@ -1490,6 +1490,7 @@ class Model:
         >>> model.data_from_df(data)
         >>> model.fit(family='log_normal_response', predictor='AC')
         >>> model.simulate(repetitions=10)
+        >>> model.draws
         
         Over-dispersed Poisson with scaled fitted values and over-dispersion = 100
         >>> import apc
@@ -1498,7 +1499,8 @@ class Model:
         >>> model.data_from_df(data)
         >>> model.fit(family='od_poisson_response', predictor='AC')
         >>> model.simulate(repetitions=10, c=0.5, sigma2=100)
-        
+        >>> model.draws
+
         """
         
         def _dgp(self, means, sigma2, repetitions, seed):
@@ -1522,11 +1524,12 @@ class Model:
             elif self.family == 'gaussian_response':
                 if sigma2 is None:
                     sigma2 = self.s2
-                draws = np.random.normal(means, sigma2, size=(repetitions, self.n))
+                draws = np.random.normal(means, np.sqrt(sigma2), size=(repetitions, self.n))
             elif self.family == 'log_normal_response':
                 if sigma2 is None:
                     sigma2 = self.s2
-                draws = np.random.lognormal(np.log(means), sigma2, size=(repetitions, self.n))
+                draws = np.random.lognormal(np.log(means), np.sqrt(sigma2),
+                                            size=(repetitions, self.n))
             else:
                 raise ValueError("Currently only supports simulations for " +
                                  "'poisson_response', 'od_poisson_response', " +
