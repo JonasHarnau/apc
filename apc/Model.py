@@ -10,9 +10,11 @@ class Model:
     """
     This class is the central object for age-period-cohort modelling.
     
-    This is the central object for age-period-cohort modelling. Currently it
-    can only hold data, but will be expanded to fit models, plot, etc. Check
-    out the help for the methods to see all the things it can do!
+    This is the central object for age-period-cohort modelling. It can format
+    and plot data, fit models and deviance tables, and simulate from a fitted
+    model (currently only Poisson, over-dispersed Poisson, and log-normal). 
+    We can also obtain sub-samples from the data (this is not yet well 
+    implemented.) For more information, check out the README!
     
     """
     def __init__(self, **kwargs):
