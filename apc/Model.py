@@ -322,8 +322,8 @@ class Model:
             bottom_L = ac_array.iloc[-1,:].sum()
             
             # Generate a mask that we match to the generalized trapezoid structure
-            # of the data, holding True for cells that should contain data and false
-            # otherwise.
+            # of the data, holding True for cells that should not contain data and 
+            # false otherwise.
             equiv_trapezoid = ac_array.copy()
             equiv_trapezoid[:] = False
             
