@@ -205,6 +205,12 @@ class Model:
             print("Inferred \'data_format\' from response: {}".format(
                 data_format))
         self.data_format = data_format
+
+        try: # try to convert to integers, useful if integers loaded as strings
+            response.columns = response.columns.astype(int)
+            response.index = response.index.astype(int)
+        except ValueError:
+            pass
         
         if rate is None and dose is None:
             data_vector = pd.DataFrame(response.unstack().rename('response'))
