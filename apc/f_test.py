@@ -14,13 +14,11 @@ def f_test(model_full, sub_models):
     # Check if sub-samples combine to full sample
     samples_combined = pd.concat(
         [sub_model.data_vector for sub_model in sub_models]
-    )
-    def _sort_and_order_index(df):
-        return df.reorder_levels(
-            ['Age', 'Cohort', 'Period']
-        ).sort_index(level='Age')
-    if not _sort_and_order_index(model_full.data_vector).equals(
-        _sort_and_order_index(samples_combined)):
+    ).rename(columns={'response': 'response_sub'})
+    merged_dfs = pd.merge(model_full.data_vector.reset_index(),
+                          samples_combined.reset_index(),
+                          on=['Age', 'Period', 'Cohort'])
+    if (merged_dfs['response'] != merged_dfs['response_sub']).any():
         raise ValueError('Sub samples do not combined to ' +
                          'full sample.' )
     # Check if all models have the same predcitor
