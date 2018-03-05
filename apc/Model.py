@@ -1557,7 +1557,6 @@ class Model:
         else:
             return draws
     
-    
     def sub_sample(self, age_from_to=(None,None), 
                    per_from_to=(None,None), coh_from_to=(None,None)):
         """
@@ -1572,8 +1571,8 @@ class Model:
                             coh_from_to[0]:coh_from_to[1], 
                             per_from_to[0]:per_from_to[1]],:]    
     
-    def sub_model(self, age_from_to=(None,None), 
-                   per_from_to=(None,None), coh_from_to=(None,None)):
+    def sub_model(self, age_from_to=(None,None), per_from_to=(None,None), 
+                  coh_from_to=(None,None), fit=True):
         """
         Generate a model from sub-sample.
         """
@@ -1581,7 +1580,10 @@ class Model:
         if sub_sample.empty:
             raise ValueError('Sub-sample is empty')
         # Reshape into array so we can use the data_from_df functionality.
-        sub_array = sub.reset_index().pivot(index='Age', columns='Cohort', values='response')
-        sub_model = apc.Model()
+        sub_array = sub_sample.reset_index().pivot(index='Age', columns='Cohort', 
+                                                   values='response')
+        sub_model = Model()
         sub_model.data_from_df(sub_array, data_format='AC', time_adjust=self.time_adjust)
+        if fit:
+            sub_model.fit(family=self.family, predictor=self.predictor)
         return sub_model    
