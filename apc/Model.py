@@ -1561,8 +1561,7 @@ class Model:
     def sub_sample(self, age_from_to=(None,None), 
                    per_from_to=(None,None), coh_from_to=(None,None)):
         """
-        Takes the data vector and throws out the ages, periods, and cohorts
-        outside the indicated range.
+        Create sub-sample from the data attached to the model.
         """
         data = self.data_vector
         if data.index.names != ['Age', 'Cohort', 'Period']:
@@ -1572,4 +1571,17 @@ class Model:
         return data.loc[idx[age_from_to[0]:age_from_to[1], 
                             coh_from_to[0]:coh_from_to[1], 
                             per_from_to[0]:per_from_to[1]],:]    
-        
+    
+    def sub_model(self, age_from_to=(None,None), 
+                   per_from_to=(None,None), coh_from_to=(None,None)):
+        """
+        Generate a model from sub-sample.
+        """
+        sub_sample = self.sub_sample(age_from_to, per_from_to, coh_from_to)
+        if sub_sample.empty:
+            raise ValueError('Sub-sample is empty')
+        # Reshape into array so we can use the data_from_df functionality.
+        sub_array = sub.reset_index().pivot(index='Age', columns='Cohort', values='response')
+        sub_model = apc.Model()
+        sub_model.data_from_df(sub_array, data_format='AC', time_adjust=self.time_adjust)
+        return sub_model    
