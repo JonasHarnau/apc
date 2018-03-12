@@ -1597,7 +1597,7 @@ class Model:
 
         style : {'detrend', 'sum_sum'}
         """
-        def filter_for(labels, filt):
+        def f(labels, filt): # filter
             return [l for l in labels if filt in l]
 
         para_table = self.para_table
@@ -1613,38 +1613,53 @@ class Model:
         age_design = self.design.groupby('Age').first()
         per_design = self.design.groupby('Period').first()
         coh_design = self.design.groupby('Cohort').first()
-
-        slope_age_coef = age_design['slope_age'] * estimates['slope_age']
+        
+        slope_age_coef = age_design[
+            f(index_labels,'slope_age')
+        ] * estimates[f(index_labels,'slope_age')]
         level_coef = np.repeat(estimates['level'],2)
-        slope_coh_coef = coh_design['slope_coh'] * estimates['slope_coh']
+        slope_coh_coef = coh_design[
+            f(index_labels,'slope_coh')
+        ] * estimates[f(index_labels,'slope_coh')]
 
         level_stderr = np.repeat(std_err['level'],2)
-        slope_age_stderr = age_design['slope_age'] * std_err['slope_age']
-        slope_coh_stderr = coh_design['slope_coh']  * std_err['slope_coh']
+        slope_age_stderr = age_design[
+            f(index_labels,'slope_age')
+        ] * std_err[f(index_labels,'slope_age')]
+        slope_coh_stderr = coh_design[
+            f(index_labels,'slope_coh')
+        ]  * std_err[f(index_labels,'slope_coh')]
 
         # sum_sum
-        A_design = age_design.loc[:,filter_for(index_labels, 'dd_age')]
-        B_design = per_design.loc[:,filter_for(index_labels, 'dd_per')]
-        C_design = coh_design.loc[:,filter_for(index_labels, 'dd_coh')]
+        A_design = age_design.loc[:,f(index_labels, 'dd_age')]
+        B_design = per_design.loc[:,f(index_labels, 'dd_per')]
+        C_design = coh_design.loc[:,f(index_labels, 'dd_coh')]
 
         A_design.index = 'A_' + A_design.index.astype(str)
         B_design.index = 'B_' + B_design.index.astype(str)
         C_design.index = 'C_' + C_design.index.astype(str)
 
         age_cov = self.cov_canonical.loc[
-            filter_for(index_labels, 'dd_age'), 
-            filter_for(index_labels, 'dd_age')]
+            f(index_labels, 'dd_age'), 
+            f(index_labels, 'dd_age')]
         per_cov = self.cov_canonical.loc[
-            filter_for(index_labels, 'dd_per'), 
-            filter_for(index_labels, 'dd_per')]
+            f(index_labels, 'dd_per'), 
+            f(index_labels, 'dd_per')]
         coh_cov = self.cov_canonical.loc[
-            filter_for(index_labels, 'dd_coh'), 
-            filter_for(index_labels, 'dd_coh')]
+            f(index_labels, 'dd_coh'), 
+            f(index_labels, 'dd_coh')]
 
-        A_coef = A_design.dot(estimates[filter_for(index_labels, 'dd_age')])
-        B_coef = B_design.dot(estimates[filter_for(index_labels, 'dd_per')])
-        C_coef = C_design.dot(estimates[filter_for(index_labels, 'dd_coh')])
-
+        A_coef = A_design.dot(estimates[f(index_labels, 'dd_age')])
+        B_coef = B_design.dot(estimates[f(index_labels, 'dd_per')])
+        C_coef = C_design.dot(estimates[f(index_labels, 'dd_coh')])
+        
+        if (A_coef == 0).all():
+            A_coef = A_coef.replace(0,np.nan)
+        if (B_coef == 0).all():
+            B_coef = B_coef.replace(0,np.nan)
+        if (C_coef == 0).all():
+            C_coef = C_coef.replace(0,np.nan)
+            
         A_cov = A_design.dot(age_cov).dot(A_design.T)
         B_cov = B_design.dot(per_cov).dot(B_design.T)
         C_cov = C_design.dot(coh_cov).dot(C_design.T)
@@ -1660,7 +1675,7 @@ class Model:
         B_t_stat = B_coef/B_stderr
         C_t_stat = C_coef/C_stderr
 
-        if family is 'od_poisson_response':
+        if column_labels[-2] is 't':
             get_p_values = lambda t: t if np.isnan(t) else 2 * (
                 1 - stats.t.cdf(np.abs(t), self.df_resid))
         else:
@@ -1671,12 +1686,15 @@ class Model:
         B_p_values = B_t_stat.apply(get_p_values)
         C_p_values = C_t_stat.apply(get_p_values)  
 
-        A_rows = pd.DataFrame([A_coef, A_stderr, A_t_stat, A_p_values], 
-                              index=column_labels).T
-        B_rows = pd.DataFrame([B_coef, B_stderr, B_t_stat, B_p_values], 
-                              index=column_labels).T
-        C_rows = pd.DataFrame([C_coef, C_stderr, C_t_stat, C_p_values], 
-                              index=column_labels).T
+        A_rows = pd.DataFrame(
+            [A_coef, A_stderr, A_t_stat, A_p_values], 
+            index=column_labels).T
+        B_rows = pd.DataFrame(
+            [B_coef, B_stderr, B_t_stat, B_p_values], 
+            index=column_labels).T
+        C_rows = pd.DataFrame(
+            [C_coef, C_stderr, C_t_stat, C_p_values], 
+            index=column_labels).T
 
         A_rows.columns = column_labels
         B_rows.columns = column_labels
@@ -1684,9 +1702,7 @@ class Model:
 
         if style == 'sum_sum':
             para_table = pd.concat(
-                [para_table.loc[['level', 'slope_age', 'slope_coh'], :],
-                 A_rows, B_rows, C_rows], axis=0)
-            return para_table
+                [para_table, A_rows, B_rows, C_rows], axis=0)
         elif style == 'detrend':    
             A_d_design = np.identity(I)
             A_d_design[:,0] += -1 + (np.arange(1,I+1) - 1)/(I-1)
@@ -1709,7 +1725,14 @@ class Model:
             A_d_coef = A_d_design.dot(A_coef)
             B_d_coef = B_d_design.dot(B_coef)
             C_d_coef = C_d_design.dot(C_coef)
-
+            
+            if (A_d_coef == 0).all():
+                A_d_coef = A_d_coef.replace(0,np.nan)
+            if (B_d_coef == 0).all():
+                B_d_coef = B_d_coef.replace(0,np.nan)
+            if (C_d_coef == 0).all():
+                C_d_coef = C_d_coef.replace(0,np.nan)
+            
             A_d_cov = A_d_design.dot(A_cov).dot(A_d_design.T)
             B_d_cov = B_d_design.dot(B_cov).dot(B_d_design.T)
             C_d_cov = C_d_design.dot(C_cov).dot(C_d_design.T)
@@ -1724,34 +1747,35 @@ class Model:
             level_d_design = pd.Series(0, index=index_labels)
             level_d_design.loc['level'] = 1
             level_d_design.loc[
-                filter_for(index_labels, 'dd_age')] = -A_design.iloc[0,:]
+                f(index_labels, 'dd_age')] = -A_design.iloc[0,:]
             level_d_design.loc[
-                filter_for(index_labels, 'dd_coh')] = C_design.iloc[0,:]
+                f(index_labels, 'dd_coh')] = C_design.iloc[0,:]
             level_d_design.loc[
-                filter_for(index_labels, 'dd_per')
+                f(index_labels, 'dd_per')
             ] = B_design.iloc[0,:] - L/(J+1) * (B_design.iloc[-1,:] - B_design.iloc[0,:])
 
             slope_age_d_design = pd.Series(0, index=index_labels)
-            slope_age_d_design.loc['slope_age'] = 1
-            slope_age_d_design.loc[
-                filter_for(index_labels, 'dd_age')
+            slope_age_d_design.loc[f(index_labels,'slope_age')] = 1
+            slope_age_d_design.loc[f(index_labels, 'dd_age')
             ] = (A_design.iloc[-1,:] - A_design.iloc[0,:])/(I-1)
-            slope_age_d_design.loc[
-                filter_for(index_labels, 'dd_per')
+            slope_age_d_design.loc[f(index_labels, 'dd_per')
             ] = (B_design.iloc[-1,:] - B_design.iloc[0,:])/(J-1)
 
             slope_coh_d_design = pd.Series(0, index=index_labels)
-            slope_coh_d_design.loc['slope_coh'] = 1
-            slope_coh_d_design.loc[
-                filter_for(index_labels, 'dd_coh')
+            slope_coh_d_design.loc[f(index_labels,'slope_coh')] = 1
+            slope_coh_d_design.loc[f(index_labels, 'dd_coh')
             ] = (C_design.iloc[-1,:] - C_design.iloc[0,:])/(K-1)
-            slope_coh_d_design.loc[
-                filter_for(index_labels, 'dd_per')
+            slope_coh_d_design.loc[f(index_labels, 'dd_per')
             ] = (B_design.iloc[-1,:] - B_design.iloc[0,:])/(J-1)
 
             level_d_coef = level_d_design.dot(estimates)
             slope_age_d_coef = slope_age_d_design.dot(estimates)
             slope_coh_d_coef = slope_coh_d_design.dot(estimates)
+            
+            if slope_age_d_coef == 0:
+                slope_age_d_coef = np.nan
+            if slope_coh_d_coef == 0:
+                slope_coh_d_coef = np.nan
 
             level_d_stderr = level_d_design.dot(
                 self.cov_canonical).dot(level_d_design)
@@ -1761,6 +1785,11 @@ class Model:
             slope_coh_d_stderr = slope_coh_d_design.dot(
                 self.cov_canonical).dot(slope_coh_d_design)
 
+            if slope_age_d_stderr == 0:
+                slope_age_d_stderr = np.nan
+            if slope_coh_d_stderr == 0:
+                slope_coh_d_stderr = np.nan
+            
             level_d_t_stat = level_d_coef/level_d_stderr
             slope_age_d_t_stat = slope_age_d_coef/slope_age_d_stderr
             slope_coh_d_t_stat = slope_coh_d_coef/slope_coh_d_stderr
@@ -1776,7 +1805,9 @@ class Model:
             C_d_p_values = C_d_t_stat.apply(get_p_values)        
 
             level_d_row = pd.DataFrame(
-                [level_d_coef, level_d_stderr, level_d_t_stat, level_d_p_values], 
+                [level_d_coef, level_d_stderr, 
+                 level_d_t_stat, level_d_p_values
+                ], 
                 index=column_labels, columns=['level_detrend']).T
             slope_age_d_row = pd.DataFrame(
                 [slope_age_d_coef, slope_age_d_stderr, 
@@ -1808,5 +1839,8 @@ class Model:
 
             para_table = pd.concat(
                 [level_d_row, slope_age_d_row, slope_coh_d_row, 
+                 para_table.loc[f(index_labels, 'dd_'), :],
                  A_d_rows, B_d_rows, C_d_rows], axis=0)
-            return para_table
+            
+        para_table.dropna(how='all', inplace=True)
+        return para_table
