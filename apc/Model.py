@@ -1588,7 +1588,7 @@ class Model:
             sub_model.fit(family=self.family, predictor=self.predictor)
         return sub_model
 
-    def identify(self, style='detrend'):
+    def identify(self, style='detrend', attach_to_self=True):
         """
         Identify
 
@@ -1843,4 +1843,8 @@ class Model:
                  A_d_rows, B_d_rows, C_d_rows], axis=0)
             
         para_table.dropna(how='all', inplace=True)
-        return para_table
+        
+        if attach_to_self:
+            self.para_table_identified = para_table
+        else:
+            return para_table
