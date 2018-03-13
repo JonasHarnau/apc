@@ -1590,12 +1590,79 @@ class Model:
 
     def identify(self, style='detrend', attach_to_self=True):
         """
-        Identify
-
+        Computes ad hoc identified time effects.
+        
+        Forms ad hoc identified time effects from the canonical parameter. 
+        These are used either indirectly by apc.plot.fit or they are 
+        computed directly with this command. The ad hoc identifications
+        are based on Nielsen (2014, 2015). 
+        
         Parameters
         ----------
 
-        style : {'detrend', 'sum_sum'}
+        style : {'detrend', 'sum_sum'} (optional)
+                "detrend" gives double sums that start in zero and end in
+                zero. "sum_sum" gives double sums anchored in the middle 
+                of the first period diagonal.
+        
+        attach_to_self: bool (optional)
+                        Default True. If this is True the output 
+                        is attached to self.para_table_adhoc. If False the
+                        table is returned.
+                        
+                
+        Returns
+        -------
+        
+        pandas.DataFrame
+        Either attached to self.para_table_adhoc or returned.
+        
+        The dataframe has the following four columns.
+        
+        "coef"
+            The parameter estimates.
+            
+        "std err"
+            The standard errors for the parameters. If this is "NaN" 
+            standard errors are not available for the corresponding 
+            estimate.
+            
+        "t" or "z"
+            The t or z statistic. Label depending on the theory for the
+            model. "t" if the distribution is t, "z" if the distribution
+            is Gaussian.
+            
+        "P>|t|" or "P>|z|"
+            The p-value for the t or z statistic.
+            
+        
+        Examples
+        --------
+        
+        >>> import apc
+        >>> model = apc.Model()
+        >>> model.data_from_df(
+        >>>     apc.Belgian_lung_cancer()['response'],
+        >>>     rate=apc.Belgian_lung_cancer()['rate'], 
+        >>>     data_format='AP'
+        >>> )
+        >>> model.fit('gaussian_rates', 'APC')
+        >>> model.identify()
+        >>> print(para_table_adhoc)
+        
+        Notes
+        -----
+        
+        The description is largely taken from the R package apc.
+        
+        References
+        ----------
+        
+        Nielsen, B. (2014) Deviance analysis of age-period-cohort models.
+        
+        Nielsen, B. (2015) apc: An R package for age-period-cohort analysis. 
+        R Journal 7, 52-64.
+        
         """
         def f(labels, filt): # filter
             return [l for l in labels if filt in l]
@@ -1701,8 +1768,8 @@ class Model:
         C_rows.columns = column_labels
 
         if style == 'sum_sum':
-            para_table = pd.concat(
-                [para_table, A_rows, B_rows, C_rows], axis=0)
+            para_table_adhoc = pd.concat(
+                [para_table_adhoc, A_rows, B_rows, C_rows], axis=0)
         elif style == 'detrend':    
             A_d_design = np.identity(I)
             A_d_design[:,0] += -1 + (np.arange(1,I+1) - 1)/(I-1)
@@ -1837,14 +1904,14 @@ class Model:
             B_d_rows.columns = column_labels
             C_d_rows.columns = column_labels
 
-            para_table = pd.concat(
+            para_table_adhoc = pd.concat(
                 [level_d_row, slope_age_d_row, slope_coh_d_row, 
                  para_table.loc[f(index_labels, 'dd_'), :],
                  A_d_rows, B_d_rows, C_d_rows], axis=0)
             
-        para_table.dropna(how='all', inplace=True)
+        para_table_adhoc.dropna(how='all', inplace=True)
         
         if attach_to_self:
-            self.para_table_identified = para_table
+            self.para_table_adhoc = para_table_adhoc
         else:
-            return para_table
+            return para_table_adhoc
