@@ -1769,7 +1769,7 @@ class Model:
 
         if style == 'sum_sum':
             para_table_adhoc = pd.concat(
-                [para_table_adhoc, A_rows, B_rows, C_rows], axis=0)
+                [para_table, A_rows, B_rows, C_rows], axis=0)
         elif style == 'detrend':    
             A_d_design = np.identity(I)
             A_d_design[:,0] += -1 + (np.arange(1,I+1) - 1)/(I-1)
@@ -1908,7 +1908,8 @@ class Model:
                 [level_d_row, slope_age_d_row, slope_coh_d_row, 
                  para_table.loc[f(index_labels, 'dd_'), :],
                  A_d_rows, B_d_rows, C_d_rows], axis=0)
-            
+        else:
+            raise ValueError('style must be "sum_sum" or "detrend".')
         para_table_adhoc.dropna(how='all', inplace=True)
         
         if attach_to_self:
