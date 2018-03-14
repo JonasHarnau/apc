@@ -1659,6 +1659,7 @@ class Model:
         ----------
         
         Nielsen, B. (2014) Deviance analysis of age-period-cohort models.
+        Nuffield Discussion Paper 2014-W03
         
         Nielsen, B. (2015) apc: An R package for age-period-cohort analysis. 
         R Journal 7, 52-64.
