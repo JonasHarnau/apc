@@ -59,7 +59,7 @@ class TestFit(unittest.TestCase):
         
     def test_Belgian_ln_rates(self):
         data = pd.read_excel('./apc/data/Belgian_lung_cancer.xlsx', 
-                             sheetname = ['response', 'rates'], 
+                             sheet_name = ['response', 'rates'], 
                              index_col = 0)
         model = Model()
         model.data_from_df(data['response'], rate=data['rates'], 

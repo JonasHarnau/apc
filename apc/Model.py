@@ -133,7 +133,7 @@ class Model:
         
         >>> import pandas as pd
         >>> data = pd.read_excel('./apc/data/Belgian_lung_cancer.xlsx', 
-        ...                      sheetname = ['response', 'rates'], index_col = 0)
+        ...                      sheet_name = ['response', 'rates'], index_col = 0)
         >>> model = Model()
         >>> model.data_from_df(data['response'], rate=data['rates'], 
         ...                    data_format='AP')
@@ -414,7 +414,7 @@ class Model:
         
         >>> import pandas as pd
         >>> data = pd.read_excel('./data/Belgian_lung_cancer.xlsx', 
-        ...                      sheetname = ['response', 'rates'], index_col = 0)
+        ...                      sheet_name = ['response', 'rates'], index_col = 0)
         >>> import apc
         >>> model = apc.Model()
         >>> model.data_from_df(data['response'], rate=data['rates'], 
@@ -1165,7 +1165,7 @@ class Model:
 
         >>> import pandas as pd
         >>> data = pd.read_excel('./data/Belgian_lung_cancer.xlsx', 
-        ...                      sheetname = ['response', 'rates'], index_col = 0)
+        ...                      sheet_name = ['response', 'rates'], index_col = 0)
         >>> import apc
         >>> model = apc.Model()
         >>> model.data_from_df(data['response'], rate=data['rates'], 
@@ -1263,7 +1263,7 @@ class Model:
 
         >>> import pandas as pd
         >>> data = pd.read_excel('./data/Belgian_lung_cancer.xlsx', 
-        ...                      sheetname = ['response', 'rates'], index_col = 0)
+        ...                      sheet_name = ['response', 'rates'], index_col = 0)
         >>> import apc
         >>> model = apc.Model()
         >>> model.data_from_df(data['response'], rate=data['rates'], 
@@ -1364,7 +1364,7 @@ class Model:
         
         >>> import pandas as pd
         >>> data = pd.read_excel('./data/Belgian_lung_cancer.xlsx', 
-        ...                      sheetname = ['response', 'rates'], index_col = 0)
+        ...                      sheet_name = ['response', 'rates'], index_col = 0)
         >>> import apc
         >>> model = apc.Model()
         >>> model.data_from_df(data['response'], rate=data['rates'], 

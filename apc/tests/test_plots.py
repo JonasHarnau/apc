@@ -42,7 +42,7 @@ class TestFit(unittest.TestCase):
             
     def test_Belgian_plot_data_sums(self):
         data = pd.read_excel('./apc/data/Belgian_lung_cancer.xlsx', 
-                             sheetname = ['response', 'rates'], 
+                             sheet_name = ['response', 'rates'], 
                              index_col = 0)
         model = Model()
         model.data_from_df(data['response'], rate=data['rates'], 
@@ -55,7 +55,7 @@ class TestFit(unittest.TestCase):
             
     def test_Belgian_plot_data_heatmaps(self):
         data = pd.read_excel('./apc/data/Belgian_lung_cancer.xlsx', 
-                             sheetname = ['response', 'rates'], 
+                             sheet_name = ['response', 'rates'], 
                              index_col = 0)
         model = Model()
         model.data_from_df(data['response'], rate=data['rates'], 
@@ -71,7 +71,7 @@ class TestFit(unittest.TestCase):
 
     def test_Belgian_plot_data_within(self):
         data = pd.read_excel('./apc/data/Belgian_lung_cancer.xlsx', 
-                             sheetname = ['response', 'rates'], 
+                             sheet_name = ['response', 'rates'], 
                              index_col = 0)
         model = Model()
         model.data_from_df(data['response'], rate=data['rates'], 
