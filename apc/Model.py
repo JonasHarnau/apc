@@ -1682,22 +1682,6 @@ class Model:
         per_design = self.design.groupby('Period').first()
         coh_design = self.design.groupby('Cohort').first()
         
-        slope_age_coef = age_design[
-            f(index_labels,'slope_age')
-        ] * estimates[f(index_labels,'slope_age')]
-        level_coef = np.repeat(estimates['level'],2)
-        slope_coh_coef = coh_design[
-            f(index_labels,'slope_coh')
-        ] * estimates[f(index_labels,'slope_coh')]
-
-        level_stderr = np.repeat(std_err['level'],2)
-        slope_age_stderr = age_design[
-            f(index_labels,'slope_age')
-        ] * std_err[f(index_labels,'slope_age')]
-        slope_coh_stderr = coh_design[
-            f(index_labels,'slope_coh')
-        ]  * std_err[f(index_labels,'slope_coh')]
-
         # sum_sum
         A_design = age_design.loc[:,f(index_labels, 'dd_age')]
         B_design = per_design.loc[:,f(index_labels, 'dd_per')]
