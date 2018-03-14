@@ -752,22 +752,22 @@ class Model:
         # Create the glm object
         if family is 'binomial_dose_response':
             glm = sm.GLM(pd.concat((response, dose - response), axis = 1), design, 
-                         family=sm.families.Binomial(sm.families.links.logit))    
+                         family=sm.families.Binomial())    
         elif family in ('poisson_response', 'od_poisson_response'):
             glm = sm.GLM(response, design, 
-                         family=sm.families.Poisson(sm.families.links.log))        
+                         family=sm.families.Poisson())        
         elif family is 'gaussian_response':
             glm = sm.GLM(response, design, 
-                         family = sm.families.Gaussian(sm.families.links.identity))
+                         family = sm.families.Gaussian())
         elif family is 'gaussian_rates':
             glm = sm.GLM(rate, design, 
-                         family = sm.families.Gaussian(sm.families.links.identity))
+                         family = sm.families.Gaussian())
         elif family is 'log_normal_response':
             glm = sm.GLM(np.log(response), design, 
-                         family = sm.families.Gaussian(sm.families.links.identity))
+                         family = sm.families.Gaussian())
         elif family is 'log_normal_rates':
             glm = sm.GLM(np.log(rate), design, 
-                         family = sm.families.Gaussian(sm.families.links.identity))
+                         family = sm.families.Gaussian())
         
         # Fit the model
         fit = glm.fit()
