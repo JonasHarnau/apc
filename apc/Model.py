@@ -1119,7 +1119,7 @@ class Model:
         if simplify_ranges == 'start':
             col_simple = col_from_to.iloc[:,0].astype(int)
         elif simplify_ranges == 'end':
-            col_simple = col_from_to.iloc[:,1].astype(int)
+            col_simple = col_from_to.iloc[:,-1].astype(int)
         elif simplify_ranges == 'mean':
             col_simple = col_from_to.mean(axis=1).round().astype(int)
         else:
