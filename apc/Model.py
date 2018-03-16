@@ -1665,7 +1665,8 @@ class Model:
         R Journal 7, 52-64.
         
         """
-        def f(labels, filt): # filter
+        def f(labels, filt): 
+            # filter
             return [l for l in labels if filt in l]
 
         para_table = self.para_table
@@ -1677,7 +1678,7 @@ class Model:
         predictor = self.predictor
 
         I, J, K, L = self.I, self.J, self.K, self.L
-        U = self._design_components['anchor_index']
+        U = self._design_components['anchor_index'] # in the papers notation, this is U-1
 
         age_design = self.design.groupby('Age').first()
         per_design = self.design.groupby('Period').first()
@@ -1718,11 +1719,11 @@ class Model:
         C_cov = C_design.dot(coh_cov).dot(C_design.T)
 
         A_stderr = pd.Series(
-            np.diag(A_cov), index=A_coef.index).replace(0, np.nan)
+            np.sqrt(np.diag(A_cov)), index=A_coef.index).replace(0, np.nan)
         B_stderr = pd.Series(
-            np.diag(B_cov), index=B_coef.index).replace(0, np.nan)
+            np.sqrt(np.diag(B_cov)), index=B_coef.index).replace(0, np.nan)
         C_stderr = pd.Series(
-            np.diag(C_cov), index=C_coef.index).replace(0, np.nan)
+            np.sqrt(np.diag(C_cov)), index=C_coef.index).replace(0, np.nan)
 
         A_t_stat = A_coef/A_stderr
         B_t_stat = B_coef/B_stderr
@@ -1791,21 +1792,24 @@ class Model:
             C_d_cov = C_d_design.dot(C_cov).dot(C_d_design.T)
 
             A_d_stderr = pd.Series(
-                np.diag(A_d_cov), index=A_coef.index).replace(0, np.nan)
+                np.sqrt(np.diag(A_d_cov)), index=A_coef.index).replace(0, np.nan)
             B_d_stderr = pd.Series(
-                np.diag(B_d_cov), index=B_coef.index).replace(0, np.nan)
+                np.sqrt(np.diag(B_d_cov)), index=B_coef.index).replace(0, np.nan)
             C_d_stderr = pd.Series(
-                np.diag(C_d_cov), index=C_coef.index).replace(0, np.nan)
+                np.sqrt(np.diag(C_d_cov)), index=C_coef.index).replace(0, np.nan)
 
             level_d_design = pd.Series(0, index=index_labels)
             level_d_design.loc['level'] = 1
+            level_d_design.loc[f(index_labels,'slope_age')] = -U
+            level_d_design.loc[f(index_labels,'slope_coh')] = -U
+            level_d_design.loc[f(index_labels,'slope_per')] = -U
             level_d_design.loc[
-                f(index_labels, 'dd_age')] = -A_design.iloc[0,:]
+                f(index_labels, 'dd_age')] = A_design.iloc[0,:]
             level_d_design.loc[
                 f(index_labels, 'dd_coh')] = C_design.iloc[0,:]
             level_d_design.loc[
                 f(index_labels, 'dd_per')
-            ] = B_design.iloc[0,:] - L/(J+1) * (B_design.iloc[-1,:] - B_design.iloc[0,:])
+            ] = B_design.iloc[0,:] - L * (B_design.iloc[-1,:] - B_design.iloc[0,:])/(J-1)
             
             
             if predictor in ('APC', 'AP', 'AC', 'PC', 'Ad', 'Pd', 'Cd', 'A', 't', 'tA'):
@@ -1816,8 +1820,8 @@ class Model:
                 slope_age_d_design.loc[f(index_labels, 'dd_per')
                 ] = (B_design.iloc[-1,:] - B_design.iloc[0,:])/(J-1)
                 slope_age_d_coef = slope_age_d_design.dot(estimates)
-                slope_age_d_stderr = slope_age_d_design.dot(
-                    self.cov_canonical).dot(slope_age_d_design)
+                slope_age_d_stderr = np.sqrt(slope_age_d_design.dot(
+                    self.cov_canonical).dot(slope_age_d_design))
                 if slope_age_d_coef == 0:
                     slope_age_d_coef = np.nan
                 if slope_age_d_stderr == 0:
@@ -1839,8 +1843,8 @@ class Model:
                 slope_coh_d_design.loc[f(index_labels, 'dd_per')
                 ] = (B_design.iloc[-1,:] - B_design.iloc[0,:])/(J-1)
                 slope_coh_d_coef = slope_coh_d_design.dot(estimates)
-                slope_coh_d_stderr = slope_coh_d_design.dot(
-                    self.cov_canonical).dot(slope_coh_d_design)            
+                slope_coh_d_stderr = np.sqrt(slope_coh_d_design.dot(
+                    self.cov_canonical).dot(slope_coh_d_design))          
                 if slope_coh_d_coef == 0:
                     slope_coh_d_coef = np.nan
                 if slope_coh_d_stderr == 0:
@@ -1860,8 +1864,8 @@ class Model:
                 slope_per_d_design.loc[f(index_labels, 'dd_per')
                 ] = (B_design.iloc[-1,:] - B_design.iloc[0,:])/(J-1)
                 slope_per_d_coef = slope_per_d_design.dot(estimates)
-                slope_per_d_stderr = slope_per_d_design.dot(
-                    self.cov_canonical).dot(slope_per_d_design)            
+                slope_per_d_stderr = np.sqrt(slope_per_d_design.dot(
+                    self.cov_canonical).dot(slope_per_d_design))
                 if slope_per_d_coef == 0:
                     slope_per_d_coef = np.nan
                 if slope_per_d_stderr == 0:
@@ -1876,8 +1880,8 @@ class Model:
                 slope_per_d_row = None
                 
             level_d_coef = level_d_design.dot(estimates)
-            level_d_stderr = level_d_design.dot(
-                self.cov_canonical).dot(level_d_design)
+            level_d_stderr = np.sqrt(level_d_design.dot(
+                self.cov_canonical).dot(level_d_design))
             level_d_stderr = np.nan if (level_d_stderr == 0) else level_d_stderr
             level_d_t_stat = level_d_coef/level_d_stderr
             level_d_p_values = get_p_values(level_d_t_stat)            
