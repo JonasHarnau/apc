@@ -1932,9 +1932,72 @@ class Model:
         else:
             return para_table_adhoc
         
-    def plot_fit(self, plot_style='detrend', figsize=(10,8), 
-                 around_coef=True, simplify_ranges='start'):
+    def plot_fit(self, plot_style='detrend', around_coef=True, 
+                 simplify_ranges='start', figsize=(10,8)):
         """
+    
+        Plots for estimates from apc.Model.fit() with standard errors.
+        
+        Produces up to nine subplots, depending on the predictor. Plotted are the 
+        double differences (first row), linear trends and level (second row),
+        and adhoc identified transformations of the parameters (see help for 
+        apc.Model().identify). One and two standard errors are also plotted, except
+        for families '.poisson.response' and 'od.poisson.response' which use a multinomial
+        sampling scheme (or akin to that 'od.poisson.response').
+        
+        Parameters
+        ----------
+        
+        plot_style : {'detrend', 'sum_sum'} (optional)
+                     "detrend" gives double sums that start in zero and end in
+                     zero. "sum_sum" gives double sums anchored in the middle 
+                     of the first period diagonal. (Default is 'detrend')
+        
+        around_coef : bool (optional)
+                      Determines whetherr standard errors are plotted arounf the estimates
+                      (True) or around zero (False). (Default is False)
+        
+        simplify_ranges : {'start', 'mean', 'end', False} (optional)
+                          If the time indices are ranges, such as 1955-1959, this 
+                          determines if and how those should be transformed. Allows for 
+                          prettier axis labels. (Default is 'start'.)
+        
+        figsize : float tuple or list, optional
+                  Specifies the figure size. (Default is (10,8).)
+                        
+        Returns
+        -------
+        
+        Matplotlib figure(s) attached to self.plotted_fit. 
+        
+        Notes
+        -----
+        
+        Parts of the description are taken from the R package apc.
+        
+        Examples
+        --------
+        
+        >>> import apc
+        >>> model = apc.Model()
+        >>> model.data_from_df(
+        >>>     apc.Belgian_lung_cancer()['response'],
+        >>>     rate=apc.Belgian_lung_cancer()['rate'], 
+        >>>     data_format='AP'
+        >>> )
+        >>> model.fit('gaussian_rates', 'APC')
+        >>> model.plot_fit()
+        >>> model.plotted_fit
+          
+        References
+        ----------
+        
+        Nielsen, B. (2014) Deviance analysis of age-period-cohort models.
+        Nuffield Discussion Paper 2014-W03
+        
+        Nielsen, B. (2015) apc: An R package for age-period-cohort analysis. 
+        R Journal 7, 52-64.
+        
         """
         fig, ax = plt.subplots(ncols=3, nrows=3, figsize=figsize)
         # first column is age, second period, third cohort. 
