@@ -1931,3 +1931,155 @@ class Model:
             self.para_table_adhoc = para_table_adhoc
         else:
             return para_table_adhoc
+        
+    def plot_fit(self, plot_style='detrend', figsize=(10,8), 
+                 around_coef=True, simplify_ranges='start'):
+        """
+        """
+        fig, ax = plt.subplots(ncols=3, nrows=3, figsize=figsize)
+        # first column is age, second period, third cohort. 
+        # exceptions are P and tP models for which the period trend is
+        # in the first column.
+        # first row is double diffs, second trend and level, third sum.sum
+
+        def f(labels, filt): # filter
+            return [l for l in labels if filt in l]
+
+        def err_plot(coef, stderr, ax, xticklabel, xlabel, 
+                     title=None, around_coef=True):
+            try:
+                coef.index = xticklabel
+                stderr.index = xticklabel
+                coef.plot(ax=ax, color='black')
+                ci1 = (coef*around_coef - stderr, 
+                       coef*around_coef + stderr)
+                ci2 = (coef*around_coef - 2*stderr, 
+                       coef*around_coef + 2*stderr)
+                ax.fill_between(
+                    xticklabel, ci1[0],ci1[1],alpha=0.2, color='blue')
+                ax.fill_between(
+                    xticklabel, ci1[0], ci2[0], alpha=0.1, color='green')
+                ax.fill_between(
+                    xticklabel, ci1[1], ci2[1],alpha=0.1, color='green')
+                ax.axhline(0, color='black', linewidth=1)
+                ax.set_title(title)
+                ax.set_xlabel(xlabel)
+            except TypeError: 
+                #occurs if inputs is an empty series. 
+                # Then turn off all labels
+                ax.axis('off')
+
+        I, J, K, L = self.I, self.J, self.K, self.L
+        predictor = self.predictor
+
+        para_table_adhoc = self.identify(plot_style, attach_to_self=False)
+
+        get_coefs = lambda x: para_table_adhoc.loc[
+            f(para_table_adhoc.index, x), 'coef'] 
+        get_stderr = lambda x: para_table_adhoc.loc[
+            f(para_table_adhoc.index, x), 'std err'] 
+
+        def get_xticklabels(series, simplify_to):
+            try:
+                col_range = series.reset_index()['index'].str.split(
+                    '_', expand=True).iloc[:,-1]
+                if simplify_to == False:
+                    label = col_range.values
+                else:
+                    label = self._simplify_range(
+                        col_range, simplify_to).values
+                return label
+            except:
+                pass
+        # double differences
+
+
+        err_plot(get_coefs('dd_age'), get_stderr('dd_age'), ax[0,0],
+                 get_xticklabels(get_coefs('dd_age'), simplify_ranges), 
+                 'age', r'$\Delta^2 \alpha$', around_coef)
+        err_plot(get_coefs('dd_per'), get_stderr('dd_per'), ax[0,1],
+                 get_xticklabels(get_coefs('dd_per'), simplify_ranges),
+                 'period', r'$\Delta^2 \beta$', around_coef)
+        err_plot(get_coefs('dd_coh'), get_stderr('dd_coh'), ax[0,2], 
+                 get_xticklabels(get_coefs('dd_coh'), simplify_ranges),
+                 'cohort', r'$\Delta^2 \gamma$', around_coef)
+
+        # level and slopes
+        def get_trend(time_scale, coef_or_stderr):
+            if coef_or_stderr == 'coef':
+                h = get_coefs
+            elif coef_or_stderr == 'stderr':
+                h = get_stderr
+            if time_scale == 'age':
+                trend = pd.Series(np.arange(I)).apply(
+                    lambda i: i*h('slope_age'))
+            elif time_scale == 'per':
+                trend = pd.Series(np.arange(J)).apply(
+                    lambda j: j*h('slope_per'))
+            else:
+                trend = pd.Series(np.arange(K)).apply(
+                    lambda k: k*h('slope_coh'))
+            try:
+                trend = trend.iloc[:,0]
+            except IndexError:
+                pass
+            return trend  
+        # the labels for the trends are more complicated since we
+        # construct those from the slopes to be begin with.
+        def get_trend_xticklabel(trend, simplify_ranges):
+            if trend == 'age':
+                raw_label = self.design.groupby('Age').first().index
+            elif trend == 'per':
+                raw_label = self.design.groupby('Period').first().index
+            elif trend == 'coh':
+                raw_label = self.design.groupby('Cohort').first().index
+            raw_label = pd.Series(raw_label)
+            labels = self._simplify_range(raw_label, simplify_ranges)
+            return labels
+
+        if predictor in ('P', 'tP'):
+            err_plot(get_trend('per', 'coef'), get_trend('per', 'stderr'),
+                     ax[1,0], get_trend_xticklabel('per', simplify_ranges),
+                     'period', 'period linear trend', around_coef)
+        else:
+            err_plot(get_trend('age', 'coef'), get_trend('age', 'stderr'),
+                     ax[1,0], get_trend_xticklabel('age', simplify_ranges),
+                     'age', 'first linear trend', around_coef)
+        err_plot(get_trend('coh', 'coef'), get_trend('coh', 'stderr'),
+                 ax[1,2], get_trend_xticklabel('coh', simplify_ranges),
+                 'cohort', 'second linear trend', around_coef)
+
+        # In the following cases the trends in the age and cohort direction
+        # can be attributed to age or cohort.
+        if predictor in ('A', 'tA'):
+            ax[1,0].set_title('age linear trend')
+        if predictor in ('C', 'tC'):
+            ax[1,2].set_title('cohort linear trend')
+
+        err_plot(pd.Series([get_coefs('level')[0]] * 2),
+                 pd.Series([get_stderr('level')[0]] * 2),             
+                 ax[1,1], range(2), 
+                 'age, period,cohort', 'level', around_coef)
+        ax[1,1].set_xticks([])
+
+        A_title = r'$\left.\sum\right.^2 \Delta^2 \alpha$'
+        B_title = r'$\left.\sum\right.^2 \Delta^2 \beta$'
+        C_title = r'$\left.\sum\right.^2 \Delta^2 \gamma$'
+        if plot_style == 'detrend':
+            A_title = 'detrended ' + A_title
+            B_title = 'detrended ' + B_title
+            C_title = 'detrended ' + C_title
+
+        err_plot(get_coefs('A_'), get_stderr('A_'), ax[2,0],
+                 get_xticklabels(get_coefs('A_'), simplify_ranges),
+                 'age', A_title, around_coef)
+        err_plot(get_coefs('B_'), get_stderr('B_'), ax[2,1],
+                 get_xticklabels(get_coefs('B_'), simplify_ranges),
+                 'period', B_title, around_coef)
+        err_plot(get_coefs('C_'), get_stderr('C_'), ax[2,2],
+                 get_xticklabels(get_coefs('C_'), simplify_ranges),
+                 'cohort', C_title, around_coef)
+
+        fig.tight_layout()
+
+        self.plotted_fit = fig
