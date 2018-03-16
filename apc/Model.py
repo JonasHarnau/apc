@@ -779,7 +779,7 @@ class Model:
         
         coefs_canonical = fit.params
         coefs_canonical.rename('coef', inplace = True)
-        cov_canonical = fit.normalized_cov_params
+        cov_canonical = fit.cov_params()
         
         if family not in ('poisson_response', 'od_poisson_response'):            
             std_errs = fit.bse
