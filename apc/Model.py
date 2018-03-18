@@ -1454,15 +1454,14 @@ class Model:
         if len(self.plotted_data_within) == 1:
             self.plotted_data_within = self.plotted_data_within[data_vector.columns[0]]
     
-    def simulate(self, repetitions, c=1, sigma2=None, seed=None, attach_to_self=True):
+    def simulate(self, repetitions, fitted_values=None, dose=None, sigma2=None, 
+                 poisson_dgp='poisson', od_poisson_dgp='cpg', seed=None, attach_to_self=True):
         """
         Simulates data for the fitted model. 
         
-        This takes the fitted values from apc.Model().fit() as true means, potentially 
-        scaled by 'c', and simulates for the data generating process implied by the
-        model family. Currently supports 'poisson_repsonse', 'od_poisson_response',
-        'gaussian_response', and 'log_normal_response'. For more info on 'sigma2' see
-        below.
+        This simulates data for the data generating process implied by the model family. 
+        Unless otherwise specified, takes the model estimates as true values for the data 
+        generating process.
         
         Parameters
         ----------
@@ -1470,89 +1469,151 @@ class Model:
         repetitions : int
                       The number of draws.
                       
-        c : float, optional
-            Proportionality factor for the means. Multiplies the fitted values.
-            Default is 1.
-            
-        sigma2 : float > 0 (>=1 for 'od_poisson_repsonse'), optional
-                 For 'gaussian_response' and 'log_normal_response', this is the variance
-                 of the (log-)Gaussian distribution. For 'od_poisson_response', this is 
-                 the over-dispersion. Ignored for 'poisson_response'. 
-                 Default for 'gaussian_response' and 'log_normal_response' is Model().s2.
-                 Default for 'od_poisson_response' is Model().deviance/Model().df_resid.
+        fitted_values : pandas.Series, optional
+                        For Gaussian and (over-dispersed) Poisson families this
+                        corresponds to the mean. For log-normal families this is
+                        the median so log(fitted_values) are the Gaussian means. 
+                        For binomial, corresponds to the the probabilities. If left
+                        unspecified this is set to apc.Model().fitted_values as 
+                        returned from apc.Model().fit().
+        
+        dose : pandas.Series, optional
+               Only needed for binomial. Corresponds to the cell-wise number of trials. 
+               If left unspecified this is set to apc.data_vector['dose'] as returned
+               from apc.Model().data_from_df().
+        
+        sigma2 : float > 0 (>1 for 'od_poisson_repsonse'), optional
+                 For Gaussian and log-normal families this is the variance of the 
+                 (log-)Gaussian distribution. For 'od_poisson_response', this is
+                 the over-dispersion. If left unspecified this is set to apc.Model().s2
+                 as returned from apc.Model().fit() if needed by the data generating 
+                 process. Ignored for Poisson and binomial families. 
+        
+        poisson_dgp : {'poisson', 'multinomial'}, optional
+                      Only relevant for Poisson families. If set to 'poisson', the
+                      data generating process is Poisson. If set to 'multinomial',
+                      the data generating process is multinomial with total number
+                      of trials equal to the sum of 'fitted_values' and cell-wise
+                      probabilities set to 'fitted_values/sum(fitted_values)'. This
+                      corresponds to a simulation condational on the total counts
+                      and may be of interest for inference in a multinomial sampling
+                      scheme; see for example Martínez Miranda et al. (2015). (Default
+                      is 'poisson'.)
+                      
+        od_poisson_dgp : {'cpg', 'neg_binomial'}, optional
+                         Determines the data generating process for over-dispersed 
+                         Poisson. 'cpg' is compound Poisson gamma and generates 
+                         continuous data, 'neg_binomal' is negative binomial and
+                         generates discrete data. Compound Poisson is generated as
+                         described, for example, by Harnau et al. (2017). (Default is
+                         'cpg'.)
+                         
+        seed : int, optional
+               The random seed used to generate the draws.
+        
+        attach_to_self: bool, optional
+                        Default True. If this is True the output is attached to 
+                        self.draws. If False the table is returned. (Default is True.)
         
         Returns
         -------
         
-        pandas.DataFrame of draws. The index of this dataframe corresponds to the index 
-        of Model().fitted_values. The draws are in the columns. 
+        pandas.DataFrame of draws either directly or attached to Model().draws (see
+        'attach_to_self'). The index of this dataframe corresponds to the index of 
+        Model().fitted_values. The draws are in the columns. 
         
-        Notes
-        -----
-        Over-dispersed Poisson data is simulated as compound Poisson-Gamma.
-                
         Examples
         --------
         
-        Log-normal
-        >>> import apc
-        >>> data = apc.loss_VNJ()
+        Log-normal rates
         >>> model = apc.Model()
-        >>> model.data_from_df(data)
-        >>> model.fit(family='log_normal_response', predictor='AC')
-        >>> model.simulate(repetitions=10)
+        >>> model.data_from_df(apc.Belgian_lung_cancer()['response'],
+        >>>                    rate = apc.Belgian_lung_cancer()['rate'],
+        >>>                    data_format='AP')
+        >>> model.fit('log_normal_rates', 'APC')
+        >>> model.simulate(repetitions=5)
         >>> model.draws
         
-        Over-dispersed Poisson with scaled fitted values and over-dispersion = 100
+        Over-dispersed Poisson with negative binomial draws.
         >>> import apc
-        >>> data = apc.loss_TA()
         >>> model = apc.Model()
-        >>> model.data_from_df(data)
+        >>> model.data_from_df(apc.loss_TA())
         >>> model.fit(family='od_poisson_response', predictor='AC')
-        >>> model.simulate(repetitions=10, c=0.5, sigma2=100)
+        >>> model.simulate(repetitions=10, od_poisson_dgp='neg_binomial')
         >>> model.draws
-
+        
+        References
+        ----------
+        
+        Harnau, J., & Nielsen, B. (2017). Over-dispersed age-period-cohort models.
+        Journal of the American Statistical Association. 
+        https://doi.org/10.1080/01621459.2017.1366908
+        
+        Martínez Miranda, M. D., Nielsen, B., & Nielsen, J. P. (2015). Inference and
+        forecasting in the age-period-cohort model with unknown exposure with an 
+        application to mesothelioma mortality. Journal of the Royal Statistical 
+        Society: Series A (Statistics in Society), 178(1), 29–55. 
         """
         
-        def _dgp(self, means, sigma2, repetitions, seed):
+        def _dgp(self, repetitions, fitted_values, dose, sigma2, 
+                 poisson_dgp, od_poisson_dgp, seed):
             """Specifies the data generating process"""
+            n = self.n
+            family = self.family
+            if fitted_values is None:
+                fitted_values = self.fitted_values
+            if (sigma2 is None) and (family not in ('poisson_response',
+                                                    'binomial_dose_response')):
+                sigma2 = self.s2
+            if (dose is None) and (family == 'binomial_dose_response'):
+                dose = self.data_vector['dose']
             np.random.seed(seed)
-            if (self.family == 'poisson_response' 
-                or self.family == 'od_poisson_response' and sigma2 == 1):
-                draws = np.random.poisson(means, size=(repetitions, self.n))
-            elif self.family == 'od_poisson_response':
-                if sigma2 is None:
-                    sigma2 = self.deviance/self.df_resid
-                if sigma2 > 1:
+            if family == 'poisson_response':
+                if poisson_dgp == 'poisson':
+                    means = fitted_values
+                    draws = np.random.poisson(means, size=(repetitions, n))
+                elif poisson_dgp == 'multinomial':
+                    tau = fitted_values.sum()
+                    p = fitted_values/tau                    
+                    draws = np.random.multinomial(tau,p, size=repetitions)
+            elif family == 'od_poisson_response':
+                if od_poisson_dgp == 'cpg':
+                    means = fitted_values
                     scale = sigma2 - 1
                     shape = 1/scale
                     draws = np.random.gamma(
-                        shape * np.random.poisson(
-                            means, size=(repetitions, self.n)), 
+                        shape * np.random.poisson(means, size=(repetitions, n)), 
                         scale)
+                elif od_poisson_dgp == 'neg_binomial':
+                    # Implementation has parameters n for number of successes including
+                    # the last success and p for probability of success.
+                    # The mean of this is given by (1-p)/p * n.
+                    # Variance is (1-p)/p * n / p = mean/p.
+                    means = fitted_values
+                    p = 1/sigma2
+                    successes = p/(1-p) * means
+                    draws = np.random.negative_binomial(successes, p, size=(repetitions, n))
                 else:
-                    raise ValueError('sigma2 must be >=1.')
-            elif self.family == 'gaussian_response':
-                if sigma2 is None:
-                    sigma2 = self.s2
-                draws = np.random.normal(means, np.sqrt(sigma2), size=(repetitions, self.n))
-            elif self.family == 'log_normal_response':
-                if sigma2 is None:
-                    sigma2 = self.s2
-                draws = np.random.lognormal(np.log(means), np.sqrt(sigma2),
-                                            size=(repetitions, self.n))
+                    raise ValueError("od_poisson must be either 'cpg' or 'nb'")
+            elif family in ('gaussian_response', 'gaussian_rates'):
+                means = fitted_values
+                sigma = np.sqrt(sigma2)
+                draws = np.random.normal(means, sigma, size=(repetitions, n))
+            elif family in ('log_normal_response', 'log_normal_rates'):
+                lin_pred = np.log(fitted_values)
+                sigma = np.sqrt(sigma2)
+                draws = np.random.lognormal(lin_pred, sigma, size=(repetitions, n))
+            elif family == 'binomial_dose_response':
+                p = fitted_values
+                dose = dose.astype(int)
+                draws = np.random.binomial(dose, p, size=(repetitions, n))
             else:
-                raise ValueError("Currently only supports simulations for " +
-                                 "'poisson_response', 'od_poisson_response', " +
-                                 "'gaussian_response', 'log_normal_response'")
+                raise ValueError("Model family can currently not be simulated.")
             return draws
         
-        if c is None:
-            means = self.fitted_values
-        else:
-            means = float(c) * self.fitted_values
-        draws = pd.DataFrame(_dgp(self, means, sigma2, repetitions, seed).T,
-                            index = means.index)
+        draws = pd.DataFrame(_dgp(self, repetitions, fitted_values, dose, sigma2, 
+                                  poisson_dgp, od_poisson_dgp, seed).T,
+                            index = self.fitted_values.index)
         if attach_to_self:
             self.draws = draws
         else:
