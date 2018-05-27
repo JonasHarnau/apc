@@ -9,7 +9,15 @@ by Nielsen (2015) who also discusses the use of the R package of the same name.
 
 ## Latest changes
 
-Version 0.2.0 is a complete rething of the package. It introduces the ``Model`` Class as
+Version 0.3.0 substantially expands the functionality of Version 0.2.0. 
+* Parameter plots with standard errors
+* Simulations based on estimated model
+* Creating sub-samples and models based on those
+* Bartlett and F-tests for misspecification
+* Non-nested testing between log-normal and over-dispersed Poisson
+
+
+Version 0.2.0 is a complete rethink of the package. It introduces the ``Model`` Class as
 the primary object of interest. This has now been expanded to match the functionality of 
 the last version 0.1.0. As such, 0.2.0 is unfortunately **not** downward compatible!
 
