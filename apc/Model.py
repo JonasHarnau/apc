@@ -1110,7 +1110,7 @@ class Model:
         Parameters
         ----------
         
-        simplify_ranges : {'start', 'mean', 'end', False}
+        simplify_ranges : {'start', 'mean', 'end'}
         
         """
         try:
@@ -1125,7 +1125,7 @@ class Model:
             col_simple = col_from_to.mean(axis=1).round().astype(int)
         else:
             raise ValueError("'simplify_range' must be one of 'start', " +
-                             "'mean', 'end' or False")
+                             "'mean' or 'end'")
         
         return col_simple
     
