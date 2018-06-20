@@ -210,7 +210,7 @@ class Model:
         try: # try to convert to integers, useful if integers loaded as strings
             response.columns = response.columns.astype(int)
             response.index = response.index.astype(int)
-        except ValueError:
+        except TypeError:
             pass
         
         if rate is None and dose is None:
