@@ -683,7 +683,7 @@ class Model:
         
         cov_canonical : pandas.DataFrame
                         Normalized covariance matrix. For Poisson and over-dispersed
-                        Poisson models this is the 
+                        Poisson models this is the multinomial covariance.
         
         Notes
         -----
