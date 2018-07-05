@@ -2264,12 +2264,22 @@ class Model:
         Produces table of distribution forecasts
         """
 
-        _grp = lambda df: df if agg is None else df.groupby(agg).sum()
+        def _grp(df):
+            if agg is None: 
+                return df
+            elif agg in ('Age', 'Period', 'Cohort'):
+                return df.sum(level=agg)
+            elif agg == 'Total':
+                try:
+                    tmp = pd.DataFrame(df.sum(), columns=['Total']).T
+                except ValueError: # Scalar case
+                    tmp = pd.Series(df.sum(), index=['Total'], name=df.name)
+                return tmp
 
         fc_point_A = _grp(fc_point)
         pi_A = _grp(pi)
         pi_H_prod_A = _grp(pi_H_prod)
-
+        
         idx = fc_point_A.index
 
         s_A_2 = np.einsum('ip,ip->i', pi_H_prod_A.dot(i_inv), pi_H_prod_A)
@@ -2323,9 +2333,9 @@ class Model:
             _get_tbl = lambda agg: self._get_fc_table_t_odp(
                 fc_point, fc_pi, tau, fc_pi_H_prod, i_xi2_inv, quantiles, agg)
 
-            if what not in ('all', 'cell', 'age', 'period', 'cohort'):
-                raise ValueError('"what" needs to be one of "all", '
-                                 + '"cell", "age", "period" or "cohort".')
+            if what not in ('all', 'cell', 'age', 'period', 'cohort', 'total'):
+                raise ValueError('"what" needs to be one of "all", "cell", '
+                                 + '"age", "period", "cohort" or "total".')
             if what in ('all', 'cell'):
                 self.fc_dist_t_cell = _get_tbl(None)
             if what in ('all', 'age'):
@@ -2334,3 +2344,6 @@ class Model:
                 self.fc_dist_t_period = _get_tbl('Period')
             if what in ('all', 'cohort'):
                 self.fc_dist_t_cohort = _get_tbl('Cohort')
+            if what in ('all', 'total'):
+                self.fc_dist_t_total = _get_tbl('Total')
+                
