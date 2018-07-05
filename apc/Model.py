@@ -2208,3 +2208,129 @@ class Model:
         fig.tight_layout()
 
         self.plotted_fit = fig
+        
+    def _get_fc_design(self):
+        """
+        Generates design for forecasting array.
+        """
+        ac_array = self._vector_to_array(
+            self.data_vector['response'], space='AC'
+        ).fillna(0) # generate dummy data for full array
+
+        tmp_model = Model()
+        tmp_model.data_from_df(ac_array, data_format='AC')
+        full_design = tmp_model._get_design('AC')
+
+        # get last in-sample period
+        d = dict(zip(full_design.index.names, range(3)))
+        per_labels = full_design.index.levels[d['Period']]
+        L, J = self.L, self.J
+        max_insmpl_per_label = per_labels[L+J]
+
+        fc_design = full_design.loc[
+            pd.IndexSlice[:,:,max_insmpl_per_label:],:
+        ]
+        return fc_design
+
+    def get_point_fc(self, attach_to_self=True):
+        """
+        Generate point forecasts.
+        """
+
+        fc_design = self._get_fc_design()
+        fc_linpred = fc_design.dot(self.para_table['coef']).rename(
+            'linear predictor forecast')
+
+        if self.family in ('poisson_response', 'log_normal_response', 
+                        'od_poisson_response'):
+            fc_point = np.exp(fc_linpred).rename('point forecast')
+        elif self.family in ('gaussian_response'):
+            fc_point = fc_linpred.rename('point forecast')
+        else:
+            raise ValueError('Currently supports only "poisson_response", ' +
+                             '"log_normal_response", "od_poisson_response"' +
+                             ' and "gaussian_response"')
+
+        if attach_to_self:
+            self._fc_design = fc_design
+            self._fc_linpred = fc_linpred
+            self.fc_point = fc_point
+        else:
+            return fc_point
+
+
+    def _get_fc_table_t_odp(self, fc_point, pi, tau, pi_H_prod, i_inv, qs, agg=None):
+        """
+        Produces table of distribution forecasts
+        """
+
+        _grp = lambda df: df if agg is None else df.groupby(agg).sum()
+
+        fc_point_A = _grp(fc_point)
+        pi_A = _grp(pi)
+        pi_H_prod_A = _grp(pi_H_prod)
+
+        idx = fc_point_A.index
+
+        s_A_2 = np.einsum('ip,ip->i', pi_H_prod_A.dot(i_inv), pi_H_prod_A)
+        pi_A_sq = pi_A**2
+
+        se_p = pd.Series(np.sqrt(pi_A * self.s2  * tau), idx, name='se process')
+        se_e_x = pd.Series(
+            np.sqrt(s_A_2 * self.s2 * tau), idx, name='se estimation xi')
+        se_e_t = pd.Series(
+            np.sqrt(pi_A_sq * self.s2 * tau), idx, name='se estimation tau')
+        se_total = pd.Series(
+            np.sqrt((pi_A + s_A_2 + pi_A_sq) * self.s2 * tau), idx, name='se total')
+
+        try:
+            cvs = stats.t.ppf(qs, self.df_resid)
+            quants = pd.DataFrame(
+                (fc_point_A.values + np.outer(se_total, cvs).T).T, 
+                idx, [str(q) + '% quantile' for q in np.asarray(qs) * 100])
+        except: # happens if not quantiles provided
+            quants = None
+
+        table = pd.concat(
+            [fc_point_A, se_total, se_p, se_e_x, se_e_t, quants], axis=1)
+
+        return table
+
+    def get_dist_fc(self, how='t', what='all', quantiles=[0.75, 0.9, 0.95, 0.99]):
+        """
+        Produce distribution forecast
+        """
+        try:
+            fc_point = self.fc_point
+        except AttributeError:
+            self.get_point_fc()
+            fc_point = self.fc_point
+
+        if how == 't':
+            tau = self.fitted_values.sum()
+            # compute H_ik for forecast array
+            fc_X2 = self._fc_design.iloc[:, 1:]
+            in_smpl_X2 = self.design.iloc[:, 1:]
+            in_smpl_pi = self.fitted_values/self.fitted_values.sum()
+            fc_H = fc_X2 - in_smpl_pi.dot(in_smpl_X2)
+            # compute pi_ik for forecast array
+            fc_pi = self.fc_point/self.fitted_values.sum()
+            # term to sum later depending on the set of interest A
+            fc_pi_H_prod = (fc_pi * fc_H.T).T
+            # information matrix, adjust to match notation in paper       
+            i_xi2_inv = self.cov_canonical.iloc[1:,1:] * tau / self.s2
+
+            _get_tbl = lambda agg: self._get_fc_table_t_odp(
+                fc_point, fc_pi, tau, fc_pi_H_prod, i_xi2_inv, quantiles, agg)
+
+            if what not in ('all', 'cell', 'age', 'period', 'cohort'):
+                raise ValueError('"what" needs to be one of "all", '
+                                 + '"cell", "age", "period" or "cohort".')
+            if what in ('all', 'cell'):
+                self.fc_dist_t_cell = _get_tbl(None)
+            if what in ('all', 'age'):
+                self.fc_dist_t_age = _get_tbl('Age')
+            if what in ('all', 'period'):
+                self.fc_dist_t_period = _get_tbl('Period')
+            if what in ('all', 'cohort'):
+                self.fc_dist_t_cohort = _get_tbl('Cohort')
