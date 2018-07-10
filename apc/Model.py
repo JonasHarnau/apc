@@ -2261,13 +2261,49 @@ class Model:
             return fc_point
 
 
-    def _get_fc_table_t_odp(self, fc_point, pi, tau, pi_H_prod, i_inv, qs, agg=None):
+    def get_distribution_fc(self, method=None, quantiles=[0.75, 0.9, 0.95, 0.99], 
+                            **kwargs):
         """
-        Produces table of distribution forecasts
+        Produce distribution forecasts
         """
+        try:
+            fc_point = self.fc_point
+        except AttributeError:
+            self.get_point_fc()
+            fc_point = self.fc_point
+        
+        if method is None:
+            family = self.family
+            if family == 'poisson_response':
+                method = 'normal'
+            elif family == 'od_poisson_response':
+                method = 't_odp'
+            elif family == 'gen_log_normal_response':
+                method = 't_gln'
+        
+        if method == 'normal':
+            self._get_fc_closed_form(quantiles, method)
+        elif method == 't_odp':
+            self._get_fc_closed_form(quantiles, method)
+        #elif method == 't_gln':
+        #    _get_fc_closed_form(quantiles, method)
+        elif method == 'bootstrap':
+            self._get_fc_bs(quantiles, **kwargs)
+        else:
+            raise ValueError('"method" not recognized.')
 
-        def _grp(df):
-            if agg is None: 
+    def _get_fc_closed_form(self, qs, method):
+        """
+        Produces closed form distribution forecasts.
+        """
+        try:
+            fc_point = self.fc_point
+        except AttributeError:
+            self.get_point_fc()
+            fc_point = self.fc_point
+        
+        def _grp(df, agg):
+            if agg is 'Cell': 
                 return df
             elif agg in ('Age', 'Period', 'Cohort'):
                 return df.sum(level=agg)
@@ -2277,75 +2313,152 @@ class Model:
                 except ValueError: # Scalar case
                     tmp = pd.Series(df.sum(), index=['Total'], name=df.name)
                 return tmp
-
-        fc_point_A = _grp(fc_point)
-        pi_A = _grp(pi)
-        pi_H_prod_A = _grp(pi_H_prod)
         
-        idx = fc_point_A.index
-
-        s_A_2 = np.einsum('ip,ip->i', pi_H_prod_A.dot(i_inv), pi_H_prod_A)
-        pi_A_sq = pi_A**2
-
-        se_p = pd.Series(np.sqrt(pi_A * self.s2  * tau), idx, name='se process')
-        se_e_x = pd.Series(
-            np.sqrt(s_A_2 * self.s2 * tau), idx, name='se estimation xi')
-        se_e_t = pd.Series(
-            np.sqrt(pi_A_sq * self.s2 * tau), idx, name='se estimation tau')
-        se_total = pd.Series(
-            np.sqrt((pi_A + s_A_2 + pi_A_sq) * self.s2 * tau), idx, name='se total')
-
-        try:
-            cvs = stats.t.ppf(qs, self.df_resid)
-            quants = pd.DataFrame(
-                (fc_point_A.values + np.outer(se_total, cvs).T).T, 
-                idx, [str(q) + '% quantile' for q in np.asarray(qs) * 100])
-        except: # happens if not quantiles provided
-            quants = None
-
-        table = pd.concat(
-            [fc_point_A, se_total, se_p, se_e_x, se_e_t, quants], axis=1)
-
-        return table
-
-    def get_dist_fc(self, how='t', what='all', quantiles=[0.75, 0.9, 0.95, 0.99]):
-        """
-        Produce distribution forecast
-        """
-        try:
-            fc_point = self.fc_point
-        except AttributeError:
-            self.get_point_fc()
-            fc_point = self.fc_point
-
-        if how == 't':
+        if method in ('normal', 't_odp'):
+            sigma2 = self.s2 if method == 't_odp' else 1            
             tau = self.fitted_values.sum()
             # compute H_ik for forecast array
             fc_X2 = self._fc_design.iloc[:, 1:]
             in_smpl_X2 = self.design.iloc[:, 1:]
-            in_smpl_pi = self.fitted_values/self.fitted_values.sum()
+            in_smpl_pi = self.fitted_values/tau
             fc_H = fc_X2 - in_smpl_pi.dot(in_smpl_X2)
             # compute pi_ik for forecast array
-            fc_pi = self.fc_point/self.fitted_values.sum()
+            fc_pi = fc_point/tau
             # term to sum later depending on the set of interest A
             fc_pi_H_prod = (fc_pi * fc_H.T).T
-            # information matrix, adjust to match notation in paper       
-            i_xi2_inv = self.cov_canonical.iloc[1:,1:] * tau / self.s2
+            # information matrix, adjust to match notation in papers       
+            i_xi2_inv = self.cov_canonical.iloc[1:,1:] * tau
+            if self.family == 'od_poisson_response':
+                i_xi2_inv /= self.s2
 
-            _get_tbl = lambda agg: self._get_fc_table_t_odp(
-                fc_point, fc_pi, tau, fc_pi_H_prod, i_xi2_inv, quantiles, agg)
+            fc_results = {}
 
-            if what not in ('all', 'cell', 'age', 'period', 'cohort', 'total'):
-                raise ValueError('"what" needs to be one of "all", "cell", '
-                                 + '"age", "period", "cohort" or "total".')
-            if what in ('all', 'cell'):
-                self.fc_dist_t_cell = _get_tbl(None)
-            if what in ('all', 'age'):
-                self.fc_dist_t_age = _get_tbl('Age')
-            if what in ('all', 'period'):
-                self.fc_dist_t_period = _get_tbl('Period')
-            if what in ('all', 'cohort'):
-                self.fc_dist_t_cohort = _get_tbl('Cohort')
-            if what in ('all', 'total'):
-                self.fc_dist_t_total = _get_tbl('Total')
+            for agg in ('Cell', 'Age', 'Cohort', 'Period', 'Total'):
+                fc_point_A = _grp(fc_point, agg)
+                pi_A = _grp(fc_pi, agg)
+                pi_H_prod_A = _grp(fc_pi_H_prod, agg)
+
+                idx = fc_point_A.index
+                   
+                # process error
                 
+                se_proc = pd.Series(np.sqrt(pi_A * sigma2  * tau), idx, name='se process')
+                # estimation error
+                # for xi
+                s_A_2 = np.einsum('ip,ip->i', pi_H_prod_A.dot(i_xi2_inv), pi_H_prod_A)
+                se_e_xi = pd.Series(
+                    np.sqrt(s_A_2 * sigma2 * tau), idx, name='se estimation xi')
+                # for tau (only if over-dispersed Poisson)
+                se_e_tau = pd.Series(
+                    np.sqrt(pi_A**2 * sigma2 * tau) if method == 't_odp' 
+                    else 0, idx, name='se estimation tau')
+                # total error
+                se_total = np.sqrt(se_proc**2 + se_e_xi**2 + se_e_tau**2).rename(
+                    'se total')
+                
+                #quantiles
+                try:
+                    cvs = (stats.t.ppf(qs, self.df_resid) if method == 't_odp'
+                           else stats.norm.ppf(qs))
+                    quants = pd.DataFrame(
+                        (fc_point_A.values + np.outer(se_total, cvs).T).T, 
+                        idx, [str(q) + '% quantile' for q in np.asarray(qs) * 100])
+                except: # happens if no quantiles provided
+                    quants = None
+
+                table = pd.concat(
+                    [fc_point_A, 
+                     se_total, 
+                     se_proc, se_e_xi, se_e_tau if method == 't_odp' else None, 
+                     quants], axis=1)
+
+                fc_results[agg] = table
+            
+            if method == 't_odp':
+                self.fc_t_odp = fc_results
+            else:
+                self.fc_normal = fc_results
+
+    def _get_chain_ladder_fc(self, df, target_idx):
+        """
+        Generates chain-ladder point forecasts for arrays.
+
+        This function is for internal use by Model().get_dist_fc(how='bootstrap'). It is 
+        vectorized if not quite tuned for top efficiency. Further, it can deal with 
+        negative values as sometimes encountered in bootstrap draws.
+        """
+        df = df.reset_index().set_index(['Age', 'Cohort', 'Period']).sort_index()
+        age_min, age_max = df.index.levels[0].min(), df.index.levels[0].max()
+        coh_min, coh_max = df.index.levels[1].min(), df.index.levels[1].max()
+        per_max, time_adjust = df.index.levels[2].max(), self.time_adjust
+
+        # row-sums in a run-off triangle
+        coh_sums = df.sum(level='Cohort')
+
+        # compute development factors
+        dev_fctrs = []
+        for i in np.arange(age_min, age_max):
+            dev_fctrs.append((df.loc[pd.IndexSlice[:age_max+1-i, :coh_min+i-1], :].sum()
+                             /df.loc[pd.IndexSlice[:age_max-i, :coh_min+i-1], :].sum())
+                            )
+        dev_fctrs = pd.DataFrame(dev_fctrs, index=np.arange(age_max,age_min,-1))
+
+        fc_point = pd.DataFrame(None, index=target_idx, columns=df.columns)
+        fc_point = fc_point.reset_index().set_index(
+            ['Age', 'Cohort', 'Period']).sort_index()
+
+        # produce forecasts
+        for k in np.arange(coh_min+1,coh_max+1):
+            for i in np.arange(age_max,age_max-(k-coh_min), -1):
+                fc_point.loc[pd.IndexSlice[i, k, :], :] = (
+                    coh_sums.loc[k, :] 
+                    * dev_fctrs.loc[np.arange(per_max-k+time_adjust+1,i), :].prod() 
+                    * (dev_fctrs.loc[i, :]-1)
+                ).values
+
+        return fc_point.astype(float)
+    
+    def _get_fc_bs(self, qs=[0.75, 0.9, 0.95, 0.99], B=999, 
+                   adj_residuals=True, process_error='EV', seed=None):
+        np.random.seed(seed)
+        #generate Pearson residuals
+        rsdls = self.data_vector['response'].subtract(
+            self.fitted_values, axis=0).divide(np.sqrt(self.fitted_values), axis=0)
+        if adj_residuals:
+            rsdls *= np.sqrt(self.n/self.df_resid)
+
+        rsdl_draws = pd.DataFrame(
+            np.random.choice(rsdls, size=[self.n, B]), index=rsdls.index)
+        rlzd_insmpl = rsdl_draws.multiply(
+            np.sqrt(self.fitted_values), axis=0).add(self.fitted_values, axis=0)
+
+        # chain ladder estimation to deal with negatives
+        target_index = self._fc_design.index
+        bs_fc_point = self._get_chain_ladder_fc(rlzd_insmpl, target_index)
+
+        # now for the process error
+        if process_error == 'EV': # gamma errors
+            scale = (rsdls**2).sum()/self.df_resid
+            shape = (bs_fc_point.abs()/scale)
+            bs_oosmpl = np.sign(bs_fc_point) * np.random.gamma(shape, scale)
+        elif process_error == 'DH': # non-parametric errors
+            rsdls_oosmpl = pd.DataFrame(
+                np.random.choice(rsdls, size=bs_fc_point.shape), index=bs_fc_point.index)
+            fc_point = self.fc_point.reset_index().set_index(
+                ['Age', 'Cohort', 'Period']).iloc[:, 0].sort_index().rename()
+            rlzd_oosmpl = rsdls_oosmpl.multiply(
+                np.sqrt(fc_point), axis=0).add(fc_point, axis=0)
+            frcst_errs = (rlzd_oosmpl - bs_fc_point)/(np.sqrt(
+                bs_fc_point.abs()) * np.sign(bs_fc_point))
+            bs_oosmpl = frcst_errs.multiply(
+                np.sqrt(fc_point), axis=0).add(fc_point, axis=0)
+        else:
+            raise ValueError('"process_error" has to be one of "EV" or "DH"')
+
+        fc_bootstrap = {'Cell': bs_oosmpl.T.describe(qs).T,
+                        'Age': bs_oosmpl.sum(level='Age').T.describe(qs).T,
+                        'Cohort': bs_oosmpl.sum(level='Cohort').T.describe(qs).T,
+                        'Period': bs_oosmpl.sum(level='Period').T.describe(qs).T,
+                        'Total': pd.DataFrame(bs_oosmpl.sum().describe(qs).rename('Total')).T}
+
+        self.fc_bootstrap = fc_bootstrap
