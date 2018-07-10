@@ -2236,7 +2236,9 @@ class Model:
         """
         Generate point forecasts.
         """
-
+        if self.predictor != 'AC':
+            raise ValueError('Forecasting only implemented for "AC" predictor.')
+        
         fc_design = self._get_fc_design()
         fc_linpred = fc_design.dot(self.para_table['coef']).rename(
             'linear predictor forecast')
