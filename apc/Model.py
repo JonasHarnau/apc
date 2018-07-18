@@ -2462,3 +2462,14 @@ class Model:
                         'Total': pd.DataFrame(bs_oosmpl.sum().describe(qs).rename('Total')).T}
 
         self.fc_bootstrap = fc_bootstrap
+
+    def clone(self):
+        """
+        Clone model with attached data but without fitting
+        """
+        clone = Model()
+        for attribute in ('data_format', 'data_vector', 
+                          'I', 'J', 'K', 'L', 'n', 'time_adjust'):
+            setattr(clone, attribute, getattr(self, attribute))
+
+        return clone
