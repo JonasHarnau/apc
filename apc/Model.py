@@ -2209,7 +2209,7 @@ class Model:
 
         self.plotted_fit = fig
         
-    def _get_fc_design(self):
+    def _get_fc_design(self, predictor):
         """
         Generates design for forecasting array.
         """
@@ -2219,7 +2219,7 @@ class Model:
 
         tmp_model = Model()
         tmp_model.data_from_df(ac_array, data_format='AC')
-        full_design = tmp_model._get_design('AC')
+        full_design = tmp_model._get_design(predictor)
 
         # get last in-sample period
         d = dict(zip(full_design.index.names, range(3)))
@@ -2236,10 +2236,10 @@ class Model:
         """
         Generate point forecasts.
         """
-        if self.predictor != 'AC':
-            raise ValueError('Forecasting only implemented for "AC" predictor.')
+        #if self.predictor != 'AC':
+        #    raise ValueError('Forecasting only implemented for "AC" predictor.')
         
-        fc_design = self._get_fc_design()
+        fc_design = self._get_fc_design(self.predictor)
         fc_linpred = fc_design.dot(self.para_table['coef']).rename(
             'linear predictor forecast')
 
