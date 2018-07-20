@@ -2215,8 +2215,20 @@ class Model:
         """
         ac_array = self._vector_to_array(
             self.data_vector['response'], space='AC'
-        ).fillna(0) # generate dummy data for full array
+        )
+        
+        # need to fill future period with dummy data
+        # need to take care not to mess with past periods - changes anchor index and design
+        I = self.I
+        K = self.K
+        if I <= K:
+            for i in range(I):
+                ac_array.iloc[i, K-i:] = ac_array.iloc[i, K-i:].fillna(np.inf)
+        else:
+            for k in range(K):
+                ac_array.iloc[I-k:, k] = ac_array.iloc[I-k:, k].fillna(np.inf)
 
+        # generate auxiliary model to get design
         tmp_model = Model()
         tmp_model.data_from_df(ac_array, data_format='AC')
         full_design = tmp_model._get_design(predictor)
@@ -2224,8 +2236,8 @@ class Model:
         # get last in-sample period
         d = dict(zip(full_design.index.names, range(3)))
         per_labels = full_design.index.levels[d['Period']]
-        L, J = self.L, self.J
-        max_insmpl_per_label = per_labels[L+J]
+        J = self.J
+        max_insmpl_per_label = per_labels[J]
 
         fc_design = full_design.loc[
             pd.IndexSlice[:,:,max_insmpl_per_label:],:
