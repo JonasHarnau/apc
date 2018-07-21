@@ -1281,38 +1281,43 @@ class Model:
             raise AttributeError("Could not find 'data_vector', run " + 
                                  "Model().data_from_df() first.")
         
+        
+        self.plotted_data_heatmaps = self._plot_heatmaps(data_vector, simplify_ranges,
+                                                         space, figsize, **kwargs)
+
+    def _plot_heatmaps(self, data, simplify_ranges='mean', space=None, figsize=None, **kwargs):
+
         if space is None:
             space = self.data_format
-        
-        idx_names = data_vector.index.names
-        
+
+        idx_names = data.index.names
+
         if simplify_ranges:
             _simplify_range = self._simplify_range
-            data_vector = data_vector.reset_index()
-            data_vector[idx_names] = data_vector[idx_names].apply(
+            data = data.reset_index()
+            data[idx_names] = data[idx_names].apply(
                 lambda col: _simplify_range(col, simplify_ranges))
-            data_vector.set_index(idx_names, inplace=True)
-        
-        fig, ax = plt.subplots(nrows=1, ncols=data_vector.shape[1], sharey=True,
+            data.set_index(idx_names, inplace=True)
+
+        fig, ax = plt.subplots(nrows=1, ncols=data.shape[1], sharey=True,
                                figsize=figsize)
 
-        for i, col in enumerate(data_vector.columns):
+        for i, col in enumerate(data.columns):
             try:
                 active_ax = ax[i]
             except TypeError:
                 active_ax = ax
             _vector_to_array = self._vector_to_array
-            col_vector = data_vector[col]
+            col_vector = data[col]
             col_array = _vector_to_array(col_vector, space)
             sns.heatmap(ax=active_ax, data=col_array, **kwargs)   
             active_ax.set_title(col_vector.name)
             if i > 0:
                 active_ax.set_ylabel('')
-            
-        fig.tight_layout()
-        
-        self.plotted_data_heatmaps = fig
 
+        fig.tight_layout()
+
+        return fig
 
     def plot_data_within(self, n_groups=5, logy=False, aggregate='mean', 
                          figsize=None, simplify_ranges=False):
