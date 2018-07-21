@@ -257,3 +257,67 @@ def loss_BZ():
     BZ.columns.name = 'Development Year'
     
     return BZ
+
+def asbestos(sample='2007', balanced=True):
+    """
+    
+    Asbestos mortality data formatted as pandas.DataFrame.
+    
+    Counts of mesothelioma deaths in the UK by age and period. Mesothelioma is 
+    most often caused by exposure to asbestos. The data are organized in a 
+    period-age table.
+    
+    Parameters
+    ----------
+    
+    sample : {'2007', 'men_2013', 'women_2013'}, optional
+             Determines what sample is to be used. Three samples are available.
+             '2007' contains data from 1967-2007. 'men_2013' contains data for
+             men from 1967-2013 and 'women_2013' contains data for the same
+             period for women. (Default is '2007'.)
+    
+    balanced : bool, optional
+               The data originally contains some unbalanced age groups both at
+               the younger and older end. If True, these are droppe, otherwise
+               they are included. Note that the package currently cannot handle
+               unbalanced groups for modeling. (Default is True.)
+
+    Notes
+    -----
+    
+    The data description is largely taken from the R package apc.
+    Martinez Miranda et al. (2015) use the '2007' sample. In their analysis they
+    use the age-groups from 25-89 (note that this corresponds to dropping more
+    then just the unbalanced age-groups). Nielsen (2015) considers the same 
+    sample. Martinez-Miranda et al. (2016) use the update sample 'men_2013'. 
+       
+       
+    References
+    ----------
+    
+    Martínez Miranda, M. D., Nielsen, B., & Nielsen, J. P. (2015). Inference and
+    forecasting in the age-period-cohort model with unknown exposure with an 
+    application to mesothelioma mortality. Journal of the Royal Statistical 
+    Society: Series A (Statistics in Society), 178(1), 29–55.
+
+    Martínez-Miranda, M. D., Nielsen, B., & Nielsen, J. P. (2016). Simple 
+    benchmark for mesothelioma projection for Great Britain. Occupational and 
+    Environmental Medicine, 73(8), 561–563. 
+    
+    Nielsen, B. (2015). apc: An R Package for Age-Period-Cohort Analysis. The R
+    Journal, 7(2), 52–64. 
+    Open Access: https://journal.r-project.org/archive/2015-2/nielsen.pdf
+    
+    """
+    
+    asbestos = pd.read_excel('apc/data/asbestos_mortality.xlsx', sample, index_col='Period')
+    asbestos.columns.name = 'Age'
+    
+    if balanced:
+        if sample == '2007':
+            asbestos = asbestos.iloc[:, 4:-1]
+        else: 
+            asbestos = asbestos.iloc[:, 2:-1]
+        asbestos.columns = asbestos.columns.astype(np.int64)
+        
+    return asbestos
