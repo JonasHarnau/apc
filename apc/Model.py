@@ -1217,6 +1217,8 @@ class Model:
         row_idx, col_idx = space[0], space[1]
         space_dict = {'A': 'Age', 'P': 'Period', 'C': 'Cohort'}
         
+        if col_vector.name is None:
+            col_vector.name = 'data'
         array = col_vector.reset_index().pivot(index=space_dict[row_idx],
                                                columns=space_dict[col_idx],
                                                values=col_vector.name)
