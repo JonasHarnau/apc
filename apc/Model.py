@@ -1286,7 +1286,14 @@ class Model:
                                                          space, figsize, **kwargs)
 
     def _plot_heatmaps(self, data, simplify_ranges='mean', space=None, figsize=None, **kwargs):
-
+        """
+        
+        Internal function for heatmap plotting.
+        
+        See plot_data_heatmaps for specifics on the inputs.
+        
+        """
+        
         if space is None:
             space = self.data_format
 
