@@ -1,14 +1,13 @@
 import unittest
 import pandas as pd
 import numpy as np
-from apc.Model import Model
-from apc.data.pre_formatted import loss_TA
+import apc
 
-class TestFit(unittest.TestCase):
+class TestFitTable(unittest.TestCase):
 
     def test_TA_odp(self):
-        model = Model()
-        model.data_from_df(loss_TA(), time_adjust=1)
+        model = apc.Model()
+        model.data_from_df(apc.loss_TA(), data_format='CL')
         model.fit(family='od_poisson_response', predictor='AC')
         model.fit_table()
         dev_table_Ad = model.fit_table(reference_predictor='Ad', 
@@ -58,12 +57,8 @@ class TestFit(unittest.TestCase):
         
         
     def test_Belgian_ln_rates(self):
-        data = pd.read_excel('./apc/data/Belgian_lung_cancer.xlsx', 
-                             sheet_name = ['response', 'rates'], 
-                             index_col = 0)
-        model = Model()
-        model.data_from_df(data['response'], rate=data['rates'], 
-                           data_format='AP')
+        model = apc.Model()
+        model.data_from_df(**apc.Belgian_lung_cancer())
         model.fit(family='log_normal_rates', predictor='APC')
         model.fit_table()
         

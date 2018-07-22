@@ -1,14 +1,12 @@
 import unittest
-import pandas as pd
 import numpy as np
-from apc.Model import Model
-from apc.data.pre_formatted import loss_TA
+import apc
 
 class TestFit(unittest.TestCase):
 
     def test_TA_odp(self):
-        model = Model()
-        model.data_from_df(loss_TA(), time_adjust=1)
+        model = apc.Model()
+        model.data_from_df(apc.loss_TA(), data_format='CL')
         model.fit(family='od_poisson_response', predictor='AC')
         
         self.assertEqual(round(model.deviance,3), 1903014.004)
@@ -27,13 +25,9 @@ class TestFit(unittest.TestCase):
                        )
         self.assertEqual(round(model.fitted_values.sum(),3), 34358090.000)
         
-    def test_Belgian_poisson(self):
-        data = pd.read_excel('./apc/data/Belgian_lung_cancer.xlsx', 
-                             sheet_name = ['response', 'rates'], 
-                             index_col = 0)
-        model = Model()
-        model.data_from_df(data['response'], rate=data['rates'], 
-                           data_format='AP')
+    def test_Belgian_Poisson(self):
+        model = apc.Model()
+        model.data_from_df(**apc.Belgian_lung_cancer())
         model.fit(family='poisson_response', predictor='APC')
         
         self.assertEqual(round(model.deviance,3), 20.375)
@@ -52,12 +46,8 @@ class TestFit(unittest.TestCase):
         self.assertEqual(round(model.fitted_values.sum(),3), 6092.0)
         
     def test_Belgian_ln_rates(self):
-        data = pd.read_excel('./apc/data/Belgian_lung_cancer.xlsx', 
-                             sheet_name = ['response', 'rates'], 
-                             index_col = 0)
-        model = Model()
-        model.data_from_df(data['response'], rate=data['rates'], 
-                           data_format='AP')
+        model = apc.Model()
+        model.data_from_df(**apc.Belgian_lung_cancer())
         model.fit(family='log_normal_rates', predictor='APC')
         
         self.assertEqual(round(model.deviance,3), -44.854)

@@ -1,14 +1,12 @@
 import unittest
 import pandas as pd
-from apc.Model import Model
-from apc.data.pre_formatted import loss_TA
-
+import apc
 
 class TestDataFromDf(unittest.TestCase):
 
     def test_TA(self):
-        model = Model()
-        model.data_from_df(loss_TA(), time_adjust=1)
+        model = apc.Model()
+        model.data_from_df(apc.loss_TA(), time_adjust=1)
         
         self.assertEqual(model.data_format, 'CA')
         self.assertEqual(model.I, 10)
@@ -23,7 +21,7 @@ class TestDataFromDf(unittest.TestCase):
         data = pd.read_excel('./apc/data/Belgian_lung_cancer.xlsx', 
                              sheet_name = ['response', 'rates'], 
                              index_col = 0)
-        model = Model()
+        model = apc.Model()
         model.data_from_df(data['response'], rate=data['rates'], 
                            data_format='AP')
         

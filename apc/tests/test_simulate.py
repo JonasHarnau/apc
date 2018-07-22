@@ -1,14 +1,12 @@
 import unittest
-import pandas as pd
 import numpy as np
-from apc.Model import Model
-from apc.data.pre_formatted import loss_TA
+import apc
 
-class TestFit(unittest.TestCase):
+class TestSimulate(unittest.TestCase):
 
-    def test_TA_simulate(self):
-        model = Model()
-        model.data_from_df(loss_TA(), time_adjust=1)
+    def test_TA(self):
+        model = apc.Model()
+        model.data_from_df(apc.loss_TA(), data_format='CL')
         # Poisson
         model.fit('poisson_response', 'APC')
         model.simulate(repetitions=100)
