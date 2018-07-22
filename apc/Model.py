@@ -2510,3 +2510,68 @@ class Model:
             setattr(clone, attribute, getattr(self, attribute))
 
         return clone
+    
+    def plot_residuals(self, kind=None, transform=None, simplify_ranges='mean',
+                       space=None, figsize=None, **kwargs):
+        """
+        
+        Heatmap plot of residuals.
+        
+        Produces heatmaps of the residuals. The user can choose what space to plot
+        the heatmaps in, e.g. 'AC' got age-cohort space.
+        
+        Parameters
+        ----------
+        
+        simplify_ranges : {'start', 'mean', 'end', False}, optional
+                          Default is 'mean'. If the time indices are ranges, such as
+                          1955-1959, this determines if and how those should be
+                          transformed. Allows for prettier axis labels.
+        
+        kind : {'anscombe', 'deviance', 'pearson', 'response'}, optional
+               Determines what residuals are plotted. (Default is 'deviance'.)
+        
+        transform : function, optional
+                    A transformation to be applied to the residuals.
+        
+        space : {'AC', 'AP', 'PA', 'PC', 'CA', 'CP'}, optional
+                Specifies what goes on the axes (A = Age, P = period, C = cohort).
+                By default this is set to 'self.data_format'.
+        
+        figsize : float tuple or list, optional
+                  Specifies the figure size. If left empty matplotlib determines this
+                  internally.
+        
+        **kwargs : any kwargs that seaborn.heatmap can handle, optional
+                   The kwargs are fed through to seaborn.heatmap. Note that these are
+                   applied to all heatmap plots symmetrically.
+                   
+        Returns
+        -------
+        
+        Matplotlib figure attached to self.plotted_residuals
+        
+        Examples
+        --------
+        
+        >>> import apc
+        >>> model = apc.Model()
+        >>> model.data_from_df(apc.loss_TA(), data_format='CL')
+        >>> model.fit('od_poisson_response', 'AC')
+        >>> model.plot_residuals(kind='pearson')
+                
+        """
+        
+        if kind is None:
+            kind = 'deviance'
+        
+        try:
+            residuals = self.residuals[kind]
+        except AttributeError:
+            raise AttributeError('Could not find "residuals", fit a model first.')
+        
+        if transform is not None:
+            residuals = transform(residuals)
+        
+        self.plotted_residuals = self._plot_heatmaps(residuals, simplify_ranges, space,
+                                                     figsize, **kwargs)
