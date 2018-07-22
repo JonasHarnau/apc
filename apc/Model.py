@@ -1988,7 +1988,8 @@ class Model:
             level_d_coef = level_d_design.dot(estimates)
             level_d_stderr = np.sqrt(level_d_design.dot(
                 self.cov_canonical).dot(level_d_design))
-            level_d_stderr = np.nan if (level_d_stderr == 0) else level_d_stderr
+            if self.cov_canonical.loc['level', 'level'] == 0:
+                level_d_stderr = np.nan
             level_d_t_stat = level_d_coef/level_d_stderr
             level_d_p_values = get_p_values(level_d_t_stat)            
             level_d_row = pd.DataFrame(
