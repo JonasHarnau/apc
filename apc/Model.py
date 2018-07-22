@@ -2575,3 +2575,97 @@ class Model:
         
         self.plotted_residuals = self._plot_heatmaps(residuals, simplify_ranges, space,
                                                      figsize, **kwargs)
+    
+    def plot_forecast(self, by='Period', ic=False, from_to=(None, None),
+                      aggregate=False):
+        """
+        Plot forecast over a specified time dimension.
+
+        Generates a plot of response and point forecasts with one and two standard
+        error bands over a specified time dimension. Allows for intercept correction.
+
+        Parameters
+        ----------
+
+        by : {'Age', 'Period', 'Cohort'}, optional
+             Level to aggregate by. (Default is 'Period'.)
+
+        ic : bool, optional
+             Whether intercept correction should be applied. If True, multiply point
+             forecasts by the ratio of the last realization to the last fitted value.
+             (Default is False.)
+
+        from_to : Tuple, optional
+                  Specifies the plotted range. (Default is (None, None), plotting everything)
+
+        aggregate : bool, optional
+                    Whether response and point forecast should be aggregated. Mostly relevant
+                    if 'by' is not equal to 'Period'. (Default is False.)
+
+        Returns
+        -------
+
+        Matplotlib figure attached to self.plotted_forecast.
+
+        Examples
+        --------
+
+        Plot forecast of mesothelioma mortality by period with intercept correction.
+
+        >>> import apc
+        >>> model = apc.Model()
+        >>> model.data_from_df(apc.asbestos())
+        >>> model.fit('poisson_response', 'AC')
+        >>> model.get_distribution_fc()
+        >>> model.plot_forecast(ic=True)
+
+        Plot forecast of reserve by cohort / accident year, aggregated.
+
+        >>> import apc
+        >>> model = apc.Model()
+        >>> model.data_from_df(apc.loss_TA())
+        >>> model.fit('od_poisson_response', 'AC')
+        >>> model.get_distribution_fc()
+        >>> model.plot_forecast(by='Cohort', aggregate=True)
+
+        """
+
+        flt = pd.IndexSlice[from_to[0]:from_to[1]]
+
+        response = self.data_vector['response'].sum(level=by).loc[flt]
+        fitted = self.fitted_values.sum(level=by).rename('fitted').loc[flt]
+        point_fc = self.fc_distribution[by]['point forecast'].copy().loc[flt]
+        if ic:
+            ic_factor = response.sort_index().iloc[-1]/fitted.sort_index().iloc[-1]
+            point_fc *= ic_factor
+        if aggregate:
+            try:
+                point_fc += response[point_fc.index]
+            except KeyError:
+                pass
+        se_total = self.fc_distribution[by]['se total'].loc[flt]
+        ci1 = (point_fc - se_total, point_fc + se_total)
+        ci2 = (point_fc - 2*se_total, point_fc + 2*se_total)
+
+        fig, ax = plt.subplots()
+        response.plot(ax=ax, style='o')
+        fitted.plot(ax=ax, style='k-')
+        point_fc.plot(ax=ax, style='k--')
+
+        ax.fill_between(ci1[0].index, ci1[0], ci1[1],alpha=0.2, color='blue',
+                        label='1 std error')
+        ax.fill_between(ci1[0].index, ci1[0], ci2[0], alpha=0.1, color='green',
+                        label='2 std error')
+        ax.fill_between(ci1[0].index, ci1[1], ci2[1],alpha=0.1, color='green')
+
+        title = 'Forecasts by {}'.format(by)
+        if ic:
+            title += ', Intercept Corrected'
+        if aggregate:
+            title += ', Aggregated'
+
+        ax.set_title(title)
+        plt.legend()
+        fig.tight_layout()
+
+        self.plotted_forecast = fig
