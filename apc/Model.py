@@ -1305,6 +1305,8 @@ class Model:
         
         if space is None:
             space = self.data_format
+        if space == 'CL':
+            space = 'CA'
 
         idx_names = data.index.names
 
