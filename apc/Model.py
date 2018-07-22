@@ -2398,16 +2398,16 @@ class Model:
                    
                 # process error
                 
-                se_proc = pd.Series(np.sqrt(pi_A * sigma2  * tau), idx, name='se process')
+                se_proc = pd.Series(np.sqrt(pi_A * sigma2  * tau), idx, name='se_process')
                 # estimation error
                 # for xi
                 s_A_2 = np.einsum('ip,ip->i', pi_H_prod_A.dot(i_xi2_inv), pi_H_prod_A)
                 se_e_xi = pd.Series(
-                    np.sqrt(s_A_2 * sigma2 * tau), idx, name='se estimation xi')
+                    np.sqrt(s_A_2 * sigma2 * tau), idx, name='se_estimation_xi2')
                 # for tau (only if over-dispersed Poisson)
                 se_e_tau = pd.Series(
                     np.sqrt(pi_A**2 * sigma2 * tau) if method == 't_odp' 
-                    else 0, idx, name='se estimation tau')
+                    else 0, idx, name='se_estimation_tau')
                 # total error
                 se_total = np.sqrt(se_proc**2 + se_e_xi**2 + se_e_tau**2).rename(
                     'se total')
