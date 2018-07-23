@@ -2477,8 +2477,6 @@ class Model:
             self._get_fc_closed_form(quantiles, method)
         #elif method == 't_gln':
         #    _get_fc_closed_form(quantiles, method)
-        elif method == 'bootstrap':
-            self._get_fc_bs(quantiles, **kwargs)
         else:
             raise ValueError('"method" not recognized.')
 
@@ -2568,90 +2566,6 @@ class Model:
                 self.fc_t_odp = fc_results
             else:
                 self.fc_normal = fc_results
-
-    def _get_chain_ladder_fc(self, df, target_idx):
-        """
-        Generates chain-ladder point forecasts for arrays.
-
-        This function is for internal use by Model().get_dist_fc(how='bootstrap'). It is 
-        vectorized if not quite tuned for top efficiency. Further, it can deal with 
-        negative values as sometimes encountered in bootstrap draws.
-        """
-        df = df.reset_index().set_index(['Age', 'Cohort', 'Period']).sort_index()
-        age_min, age_max = df.index.levels[0].min(), df.index.levels[0].max()
-        coh_min, coh_max = df.index.levels[1].min(), df.index.levels[1].max()
-        per_max, time_adjust = df.index.levels[2].max(), self.time_adjust
-
-        # row-sums in a run-off triangle
-        coh_sums = df.sum(level='Cohort')
-
-        # compute development factors
-        dev_fctrs = []
-        for i in np.arange(age_min, age_max):
-            dev_fctrs.append((df.loc[pd.IndexSlice[:age_max+1-i, :coh_min+i-1], :].sum()
-                             /df.loc[pd.IndexSlice[:age_max-i, :coh_min+i-1], :].sum())
-                            )
-        dev_fctrs = pd.DataFrame(dev_fctrs, index=np.arange(age_max,age_min,-1))
-
-        fc_point = pd.DataFrame(None, index=target_idx, columns=df.columns)
-        fc_point = fc_point.reset_index().set_index(
-            ['Age', 'Cohort', 'Period']).sort_index()
-
-        # produce forecasts
-        for k in np.arange(coh_min+1,coh_max+1):
-            for i in np.arange(age_max,age_max-(k-coh_min), -1):
-                fc_point.loc[pd.IndexSlice[i, k, :], :] = (
-                    coh_sums.loc[k, :] 
-                    * dev_fctrs.loc[np.arange(per_max-k+time_adjust+1,i), :].prod() 
-                    * (dev_fctrs.loc[i, :]-1)
-                ).values
-
-        return fc_point.astype(float)
-    
-    def _get_fc_bs(self, qs=[0.75, 0.9, 0.95, 0.99], B=999, 
-                   adj_residuals=True, process_error='EV', seed=None):
-        np.random.seed(seed)
-        #generate Pearson residuals
-        rsdls = self.data_vector['response'].subtract(
-            self.fitted_values, axis=0).divide(np.sqrt(self.fitted_values), axis=0)
-        if adj_residuals:
-            rsdls *= np.sqrt(self.n/self.df_resid)
-
-        rsdl_draws = pd.DataFrame(
-            np.random.choice(rsdls, size=[self.n, B]), index=rsdls.index)
-        rlzd_insmpl = rsdl_draws.multiply(
-            np.sqrt(self.fitted_values), axis=0).add(self.fitted_values, axis=0)
-
-        # chain ladder estimation to deal with negatives
-        target_index = self._fc_design.index
-        bs_fc_point = self._get_chain_ladder_fc(rlzd_insmpl, target_index)
-
-        # now for the process error
-        if process_error == 'EV': # gamma errors
-            scale = (rsdls**2).sum()/self.df_resid
-            shape = (bs_fc_point.abs()/scale)
-            bs_oosmpl = np.sign(bs_fc_point) * np.random.gamma(shape, scale)
-        elif process_error == 'DH': # non-parametric errors
-            rsdls_oosmpl = pd.DataFrame(
-                np.random.choice(rsdls, size=bs_fc_point.shape), index=bs_fc_point.index)
-            fc_point = self.fc_point.reset_index().set_index(
-                ['Age', 'Cohort', 'Period']).iloc[:, 0].sort_index().rename()
-            rlzd_oosmpl = rsdls_oosmpl.multiply(
-                np.sqrt(fc_point), axis=0).add(fc_point, axis=0)
-            frcst_errs = (rlzd_oosmpl - bs_fc_point)/(np.sqrt(
-                bs_fc_point.abs()) * np.sign(bs_fc_point))
-            bs_oosmpl = frcst_errs.multiply(
-                np.sqrt(fc_point), axis=0).add(fc_point, axis=0)
-        else:
-            raise ValueError('"process_error" has to be one of "EV" or "DH"')
-
-        fc_bootstrap = {'Cell': bs_oosmpl.T.describe(qs).T,
-                        'Age': bs_oosmpl.sum(level='Age').T.describe(qs).T,
-                        'Cohort': bs_oosmpl.sum(level='Cohort').T.describe(qs).T,
-                        'Period': bs_oosmpl.sum(level='Period').T.describe(qs).T,
-                        'Total': pd.DataFrame(bs_oosmpl.sum().describe(qs).rename('Total')).T}
-
-        self.fc_bootstrap = fc_bootstrap
 
     def clone(self):
         """
