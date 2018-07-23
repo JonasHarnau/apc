@@ -2452,10 +2452,61 @@ class Model:
             return fc_point
 
 
-    def forecast(self, method=None, quantiles=[0.75, 0.9, 0.95, 0.99], **kwargs):
+    def forecast(self, quantiles=[0.75, 0.9, 0.95, 0.99], method=None, attach_to_self=True):
         """
-        Produce distribution forecasts
+        Generate forecasts.
+        
+        Generates point and closed form distribution forecasts by cell, age, period and cohort
+        as well as for the total forecast array. Currently supports forecasting for future 
+        periods in 'poisson_response' and 'od_poisson_response' models without parameter 
+        extrapolation.
+                
+        Parameters
+        ----------
+        
+        quantiles : iterable of floats in (0, 1), optional
+                    The quantiles for which the distribution forecast should be computed. 
+                    (Default is [0.75, 0.9, 0.95, 0.99].)
+        
+        method : {'n_poisson', 't_odp'}, optional
+                 Determines the forecasting method. 'n_poisson' is appropriate for 
+                 'poisson_response' models and uses the theory in Martinez Miranda (2015).
+                 't_odp' is appropriate for 'od_poisson_response' and uses the theory from
+                 Harnau and Nielsen (2017). (Default uses best choice for the model.)
+        
+        attach_to_self : bool, optional
+                         If this is True the results are attached to self.forecasts. If False
+                         the results are returned. (Default is True.)
+        
+        
+        Returns
+        -------
+        
+        dictionary of pandas.DataFrame's with keys 'Age', 'Period', 'Cohort', 'Total' attached
+        to self.forecasts if 'attach_to_self' is True and returned otherwise.
+        
+        
+        Raises
+        ------
+        
+        ValueError: matrices are not aligned 
+            Raised if forecast would require parameter extrapolation.
+        
+        
+        References
+        ----------
+                
+        Harnau, J. and Nielsen, B. (2017) Asymptotic theory for over-dispersed 
+        age-period-cohort and extended chain ladder models. To appear in Journal
+        of the American Statistical Association.
+        
+        Martinez Miranda, M.D., Nielsen, B. and Nielsen, J.P. (2015) Inference 
+        and forecasting in the age-period-cohort model with unknown exposure 
+        with an application to mesothelioma mortality. Journal of the Royal 
+        Statistical Society A 178, 29-55.        
+            
         """
+        
         try:
             fc_point = self._fc_point
         except AttributeError:
@@ -2468,8 +2519,8 @@ class Model:
                 method = 'normal'
             elif family == 'od_poisson_response':
                 method = 't_odp'
-            elif family == 'gen_log_normal_response':
-                method = 't_gln'
+            #elif family == 'gen_log_normal_response':
+            #    method = 't_gln'
         
         if method == 'normal':
             self._get_fc_closed_form(quantiles, method)
