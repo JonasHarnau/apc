@@ -1395,6 +1395,7 @@ class Model:
         are needed: If lines are parallel when dropping one index the corresponding factor
         may not be needed. In practice these plots should possibly be used with care.
         
+        
         Parameters
         ----------
         
@@ -1404,21 +1405,22 @@ class Model:
                    The advantage is that the plots become less cluttered if there are
                    fewer groups to show. Default is 5. 
         
+        logy : bool, optional
+               Specifies whether the y-axis uses a log-scale. Default is 'False'.
+        
         aggregate : {'mean', 'sum'}, optional
                     Determines whether aggregation to reduce the number of groups is done
                     by summings or averaging. Default is 'mean'.        
+                    
+        figsize : float tuple or list, optional
+                  Specifies the figure size. If left empty matplotlib determines this
+                  internally.
         
         simplify_ranges : {'start', 'mean', 'end', False}, optional
                           Default is 'mean'. If the time indices are ranges, such as 
                           1955-1959, this determines if and how those should be 
                           transformed. Allows for prettier axis labels. Default is 'False'.
         
-        logy : bool, optional
-               Specifies whether the y-axis uses a log-scale. Default is 'False'.
-                    
-        figsize : float tuple or list, optional
-                  Specifies the figure size. If left empty matplotlib determines this
-                  internally.
         
         Notes
         -----
@@ -1432,17 +1434,15 @@ class Model:
         Matplotlib figure(s) attached to self.plotted_data_within. If dose/rate is available
         this is a dictionary with separate figures for response, dose, and rate as values.
         
+        
         Examples
         --------
         
-        >>> import pandas as pd
-        >>> data = pd.read_excel('./data/Belgian_lung_cancer.xlsx', 
-        ...                      sheet_name = ['response', 'rates'], index_col = 0)
         >>> import apc
         >>> model = apc.Model()
-        >>> model.data_from_df(data['response'], rate=data['rates'], 
-        ...                    data_format='AP')
+        >>> model.data_from_df(**apc.Belgian_lung_cancer())
         >>> model.plot_data_within(figsize=(10,6))
+        >>> model.plotted_data_within
                 
         """
                 
