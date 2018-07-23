@@ -2452,8 +2452,7 @@ class Model:
             return fc_point
 
 
-    def get_distribution_fc(self, method=None, quantiles=[0.75, 0.9, 0.95, 0.99], 
-                            **kwargs):
+    def forecast(self, method=None, quantiles=[0.75, 0.9, 0.95, 0.99], **kwargs):
         """
         Produce distribution forecasts
         """
@@ -2770,7 +2769,7 @@ class Model:
         >>> model = apc.Model()
         >>> model.data_from_df(apc.asbestos())
         >>> model.fit('poisson_response', 'AC')
-        >>> model.get_distribution_fc()
+        >>> model.forecast()
         >>> model.plot_forecast(ic=True)
 
         Plot forecast of reserve by cohort / accident year, aggregated.
@@ -2779,7 +2778,7 @@ class Model:
         >>> model = apc.Model()
         >>> model.data_from_df(apc.loss_TA())
         >>> model.fit('od_poisson_response', 'AC')
-        >>> model.get_distribution_fc()
+        >>> model.forecast()
         >>> model.plot_forecast(by='Cohort', aggregate=True)
 
         """
