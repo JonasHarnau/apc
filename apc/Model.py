@@ -1057,13 +1057,10 @@ class Model:
         
         def _fill_row(ref_fit, sub_fit):
             
-            family = ref_fit['family']
-            reference_predictor = ref_fit['predictor']
+            family, reference_predictor = ref_fit['family'], ref_fit['predictor']
             
-            ref_deviance = ref_fit['deviance']
-            sub_deviance = sub_fit['deviance']
-            ref_df = ref_fit['df_resid']
-            sub_df = sub_fit['df_resid']
+            ref_deviance, sub_deviance = ref_fit['deviance'], sub_fit['deviance']
+            ref_df, sub_df = ref_fit['df_resid'], sub_fit['df_resid']
             n = self.n
             try:
                 sub_aic = sub_fit['aic']
@@ -1071,58 +1068,56 @@ class Model:
                 pass
             
             if ref_fit['predictor'] == sub_fit['predictor']:
-                LR = np.nan
-                df = np.nan
-                p_LR = np.nan
+                LR, df, p_LR = np.nan, np.nan, np.nan
             else:
-                LR = sub_deviance - ref_deviance
-                df = sub_df - ref_df
-                if family in  ("gaussian_rates", "gaussian_response", 
-                          "log_normal_rates", "log_normal_response"):
+                LR, df = sub_deviance - ref_deviance, sub_df - ref_df
+                if family in ('gaussian_rates', 'gaussian_response', 
+                              'log_normal_rates', 'log_normal_response'):
                     F_from_lr = (np.exp(LR/n) - 1) * ref_df/df
                     p_LR = stats.f.sf(F_from_lr, df, ref_df)
                 else:
                     p_LR = 1 - stats.chi2.cdf(LR, df)
             
-            if family in ("gaussian_rates", "gaussian_response", 
-                          "log_normal_rates", "log_normal_response"):
-                keys = ('-2logL', 'df_resid', 
-                        'LR_vs_{}'.format(reference_predictor), 
-                        'df_vs_{}'.format(reference_predictor), 
-                        'P_exact', 'aic')
+            if family in ('gaussian_rates', 'gaussian_response', 
+                          'log_normal_rates', 'log_normal_response'):
+                idx = ('-2logL', 'df_resid', 'LR_vs_{}'.format(reference_predictor), 
+                       'df_vs_{}'.format(reference_predictor), 'P_exact', 'aic')
                 values = (sub_deviance, sub_df, LR, df, p_LR, sub_aic)
             elif family is 'poisson_response':
                 p_deviance = 1 - stats.chi2.cdf(sub_deviance, sub_df)
-                keys = ('deviance', 'df_resid', 'P>chi_sq', 
-                        'LR_vs_{}'.format(reference_predictor), 
-                        'df_vs_{}'.format(reference_predictor), 'P_chi_sq')
+                idx = ('deviance', 'df_resid', 'P>chi_sq', 
+                       'LR_vs_{}'.format(reference_predictor), 
+                       'df_vs_{}'.format(reference_predictor), 'P_chi_sq')
                 values = (sub_deviance, sub_df, p_deviance, LR, df, p_LR)                
             elif family is 'od_poisson_response':
                 if ref_fit['predictor'] == sub_fit['predictor']:
-                    F = np.nan
-                    p_F = np.nan
+                    F, p_F = np.nan, np.nan
                     p_deviance = 1 - stats.chi2.cdf(sub_deviance, sub_df)
                 else:                    
                     F = (LR/df) / (ref_deviance/ref_df)
                     p_F = 1 - stats.f.cdf(F, df, ref_df)
                     p_deviance = np.nan
-                keys = ('deviance', 'df_resid', 'P>chi_sq', 
-                        'LR_vs_{}'.format(reference_predictor), 
-                        'df_vs_{}'.format(reference_predictor), 
-                        'F_vs_{}'.format(reference_predictor),
-                        'P>F')
+                idx = ('deviance', 'df_resid', 'P>chi_sq', 
+                       'LR_vs_{}'.format(reference_predictor), 
+                       'df_vs_{}'.format(reference_predictor), 
+                       'F_vs_{}'.format(reference_predictor), 'P>F')
                 values = (sub_deviance, sub_df, p_deviance, LR, df, F, p_F)
                 
-            return collections.OrderedDict(zip(keys, values))
+            return pd.Series(values, idx)
         
-        ref_fit = self.fit(family, reference_predictor, design_components, 
-                               attach_to_self=False)
+        ref_fit = self.fit(family, reference_predictor, design_components,
+                           attach_to_self=False)
         
-        deviance_table = pd.DataFrame([
-            _fill_row(ref_fit, self.fit(
-                family, sub_pred, design_components, attach_to_self=False)
-                     ) for sub_pred in [reference_predictor] + sub_predictors],
-            index = [reference_predictor] + sub_predictors)
+        ref_fit_row = _fill_row(ref_fit, ref_fit)
+        
+        deviance_table = pd.DataFrame(None, index=[reference_predictor] + sub_predictors,
+                                      columns=ref_fit_row.index)
+        
+        deviance_table.loc[reference_predictor, :] = ref_fit_row
+        
+        for sub_pred in sub_predictors:
+            sub_fit = self.fit(family, sub_pred, design_components, attach_to_self=False)
+            deviance_table.loc[sub_pred, :] = _fill_row(ref_fit, sub_fit)
         
         if attach_to_self:
             self.deviance_table = deviance_table
