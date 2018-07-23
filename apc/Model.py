@@ -1083,13 +1083,13 @@ class Model:
                 idx = ('-2logL', 'df_resid', 'LR_vs_{}'.format(reference_predictor), 
                        'df_vs_{}'.format(reference_predictor), 'P_exact', 'aic')
                 values = (sub_deviance, sub_df, LR, df, p_LR, sub_aic)
-            elif family is 'poisson_response':
+            elif family in ('poisson_response', 'binomial_dose_response'):
                 p_deviance = 1 - stats.chi2.cdf(sub_deviance, sub_df)
                 idx = ('deviance', 'df_resid', 'P>chi_sq', 
                        'LR_vs_{}'.format(reference_predictor), 
                        'df_vs_{}'.format(reference_predictor), 'P>chi_sq')
                 values = (sub_deviance, sub_df, p_deviance, LR, df, p_LR)                
-            elif family is 'od_poisson_response':
+            elif family == 'od_poisson_response':
                 if ref_fit['predictor'] == sub_fit['predictor']:
                     F, p_F = np.nan, np.nan
                     p_deviance = 1 - stats.chi2.cdf(sub_deviance, sub_df)
