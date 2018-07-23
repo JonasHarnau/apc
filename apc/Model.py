@@ -1698,7 +1698,53 @@ class Model:
     def sub_sample(self, age_from_to=(None,None), 
                    per_from_to=(None,None), coh_from_to=(None,None)):
         """
-        Create sub-sample from the data attached to the model.
+        Generates a sub-sample from Model().data_vector.
+        
+        
+        Parameters
+        ----------
+        
+        age_from_to : tuple, optional
+                      The ages to be included in the sub-sample, including start and finish.
+                      For example, the tuple (5,10) includes ages from and including 5 to and
+                      including 10. Can handle index ranges if they can be sorted meaningfully.
+        
+        per_from_to : tuple, optional
+                      The periods to be included in the sub-sample, including start and finish.
+                      For example, the tuple (5,10) includes periods from and including 5 to
+                      and including 10. Can handle index ranges if they can be sorted
+                      meaningfully.
+
+        coh_from_to : tuple, optional
+                      The cohorts to be included in the sub-sample, including start and finish.
+                      For example, the tuple (5,10) includes cohorts from and including 5 to
+                      and including 10. Can handle index ranges if they can be sorted
+                      meaningfully.
+
+
+        Returns
+        -------
+        
+        pandas.DataFrame corresponding to Model().data_vector except limited to the sub-sample.
+        
+        
+        See Also
+        --------
+        
+        Called by Model().sub_model().
+        
+        
+        Examples
+        --------
+        
+        >>> model = apc.Model()
+        >>> model.data_from_df(apc.loss_TA())
+        >>> model.sub_sample(per_from_to=(1,5))
+        
+        >>> model = apc.Model()
+        >>> model.data_from_df(**apc.Belgian_lung_cancer())
+        >>> model.sub_sample(age_from_to=('30-34', '65-69'))
+        
         """
         data = self.data_vector
         if data.index.names != ['Age', 'Cohort', 'Period']:
