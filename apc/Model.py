@@ -1745,6 +1745,7 @@ class Model:
         >>> model.sub_sample(age_from_to=('30-34', '65-69'))
         
         """
+        
         data = self.data_vector
         if data.index.names != ['Age', 'Cohort', 'Period']:
             data = data.reorder_levels(['Age', 'Cohort', 'Period']).sort_index()
@@ -1757,8 +1758,68 @@ class Model:
     def sub_model(self, age_from_to=(None,None), per_from_to=(None,None), 
                   coh_from_to=(None,None), fit=True):
         """
-        Generate a model from sub-sample.
+        Generate a model from specified sub-sample.
+        
+        Generates a model with a sub-sample of data attached to it. If not otherwise specified,
+        this sub-model is automatically fitted with the same family and predictor as the 
+        original model.
+        
+        
+        Parameters
+        ----------
+        
+        age_from_to : tuple, optional
+                      The ages to be included in the sub-sample, including start and finish.
+                      For example, the tuple (5,10) includes ages from and including 5 to and
+                      including 10. Can handle index ranges if they can be sorted meaningfully.
+                      (Default is (None, None) thus no sub-sampling.)
+        
+        per_from_to : tuple, optional
+                      The periods to be included in the sub-sample, including start and finish.
+                      For example, the tuple (5,10) includes periods from and including 5 to
+                      and including 10. Can handle index ranges if they can be sorted
+                      meaningfully. (Default is (None, None) thus no sub-sampling.)
+
+        coh_from_to : tuple, optional
+                      The cohorts to be included in the sub-sample, including start and finish.
+                      For example, the tuple (5,10) includes cohorts from and including 5 to
+                      and including 10. Can handle index ranges if they can be sorted
+                      meaningfully. (Default is (None, None) thus no sub-sampling.)
+        
+        fit : bool, optional
+              Whether the sub-model should be fit to the data. If True, this is fit with the 
+              same family and predictor as the parent model. (Default is True.)
+        
+        
+        Returns
+        -------
+        
+        Model() Class with Model().data_from_df(sub_sample) and, if so specified by 'fit',
+        Model().fit() already called.
+        
+        
+        See also
+        --------
+        
+        This function is also useful for the misspecification tests apc.bartlett_test() and 
+        apc.f_test().
+        
+        Examples
+        --------
+        
+        >>> model = apc.Model()
+        >>> model.data_from_df(apc.loss_TA())
+        >>> model.fit('od_poisson_response', 'AC')
+        >>> model.sub_model(per_from_to=(1,5))
+        
+        >>> model = apc.Model()
+        >>> model.fit('log_normal_rates', 'APC')
+        >>> model.data_from_df(**apc.Belgian_lung_cancer())
+        >>> model.sub_model(age_from_to=('30-34', '65-69'))
+        
+        
         """
+        
         sub_sample = self.sub_sample(age_from_to, per_from_to, coh_from_to)
         if sub_sample.empty:
             raise ValueError('Sub-sample is empty')
