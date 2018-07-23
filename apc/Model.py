@@ -2482,8 +2482,8 @@ class Model:
         Returns
         -------
         
-        dictionary of pandas.DataFrame's with keys 'Age', 'Period', 'Cohort', 'Total' attached
-        to self.forecasts if 'attach_to_self' is True and returned otherwise.
+        dictionary of pandas.DataFrame's with keys 'Age', 'Period', 'Cohort', 'Total' and 
+        'method' attached to self.forecasts if 'attach_to_self' is True and returned otherwise.
         
         
         Raises
@@ -2507,16 +2507,10 @@ class Model:
             
         """
         
-        try:
-            fc_point = self._fc_point
-        except AttributeError:
-            self._get_point_fc()
-            fc_point = self._fc_point
-        
         if method is None:
             family = self.family
             if family == 'poisson_response':
-                method = 'normal'
+                method = 'n_poisson'
             elif family == 'od_poisson_response':
                 method = 't_odp'
             #elif family == 'gen_log_normal_response':
@@ -2524,14 +2518,10 @@ class Model:
         
         fc_results = self._get_fc_closed_form(quantiles, method)
         
-        if method == 'normal':
-            self.fc_normal = fc_results
-        elif method == 't_odp':
-            self.fc_t_odp = fc_results
-        #elif method == 't_gln':
-        #    _get_fc_closed_form(quantiles, method)
+        if attach_to_self:
+            self.forecasts = fc_results
         else:
-            raise ValueError('"method" not recognized.')
+            return fc_results
 
     def _get_fc_closed_form(self, qs, method):
         """
@@ -2555,7 +2545,7 @@ class Model:
                     tmp = pd.Series(df.sum(), index=['Total'], name=df.name)
                 return tmp
         
-        if method in ('normal', 't_odp'):
+        if method in ('n_poisson', 't_odp'):
             sigma2 = self.s2 if method == 't_odp' else 1            
             tau = self.fitted_values.sum()
             # compute H_ik for forecast array
@@ -2614,8 +2604,11 @@ class Model:
                      quants], axis=1)
 
                 fc_results[agg] = table
+                fc_results['method'] = method
             
             return fc_results
+        else:
+            raise ValueError('"method" not recognized.')
 
     def clone(self):
         """
