@@ -1234,8 +1234,24 @@ class Model:
     
     def _vector_to_array(self, col_vector, space):
         """
-        Takes a 'data_vector' with one column and maps it into a two-dimensional
-        array in 'space', e.g. 'CP' for cohort-period.
+        Maps column vector into two-dimensional array in 'space'
+        
+        
+        Parameters
+        ----------
+        
+        For 'space' see documentation of Model().plot_data_heatmaps().
+        
+        col_vector : pandas.Series
+                     Column vector with age-period-cohort index
+        
+        
+        Returns
+        -------
+        
+        pandas.DataFrame with row and column index corresponding to 'space' and values
+        corresponding to the values of col_vector.
+        
         """
         row_idx, col_idx = space[0], space[1]
         space_dict = {'A': 'Age', 'P': 'Period', 'C': 'Cohort'}
@@ -1599,6 +1615,7 @@ class Model:
         forecasting in the age-period-cohort model with unknown exposure with an 
         application to mesothelioma mortality. Journal of the Royal Statistical 
         Society: Series A (Statistics in Society), 178(1), 29–55. 
+        
         """
         
         def _dgp(self, repetitions, fitted_values, dose, sigma2, 
@@ -1698,6 +1715,7 @@ class Model:
 
     def identify(self, style='detrend', attach_to_self=True):
         """
+        
         Computes ad hoc identified time effects.
         
         Forms ad hoc identified time effects from the canonical parameter. 
