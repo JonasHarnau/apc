@@ -2612,7 +2612,25 @@ class Model:
 
     def clone(self):
         """
-        Clone model with attached data but without fitting
+        Clone model with attached data but without fitting.
+        
+        Clones the model with attached data so for example other model families can be fitted
+        without overwriting the previous results. Spares the hassle of going through the
+        data attachment process again.
+        
+        
+        Returns
+        -------
+        
+        Model Class after Model().data_from_df() was called.
+        
+        Examples
+        --------
+        
+        >>> model = apc.Model()
+        >>> model.data_from_df(**apc.Belgian_lung_cancer())
+        >>> cloned_model = model.clone()
+        
         """
         clone = Model()
         for attribute in ('data_format', 'data_vector', 
