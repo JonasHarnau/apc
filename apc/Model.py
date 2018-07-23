@@ -2522,10 +2522,12 @@ class Model:
             #elif family == 'gen_log_normal_response':
             #    method = 't_gln'
         
+        fc_results = self._get_fc_closed_form(quantiles, method)
+        
         if method == 'normal':
-            self._get_fc_closed_form(quantiles, method)
+            self.fc_normal = fc_results
         elif method == 't_odp':
-            self._get_fc_closed_form(quantiles, method)
+            self.fc_t_odp = fc_results
         #elif method == 't_gln':
         #    _get_fc_closed_form(quantiles, method)
         else:
@@ -2613,10 +2615,7 @@ class Model:
 
                 fc_results[agg] = table
             
-            if method == 't_odp':
-                self.fc_t_odp = fc_results
-            else:
-                self.fc_normal = fc_results
+            return fc_results
 
     def clone(self):
         """
