@@ -1504,11 +1504,12 @@ class Model:
     def simulate(self, repetitions, fitted_values=None, dose=None, sigma2=None, 
                  poisson_dgp='poisson', od_poisson_dgp='cpg', seed=None, attach_to_self=True):
         """
+        
         Simulates data for the fitted model. 
         
-        This simulates data for the data generating process implied by the model family. 
-        Unless otherwise specified, takes the model estimates as true values for the data 
-        generating process.
+        This function simulatess data for the data generating process implied by the model 
+        family. Unless otherwise specified, takes the model estimates as true values for the 
+        data generating process.
         
         Parameters
         ----------
@@ -1574,19 +1575,17 @@ class Model:
         
         Log-normal rates
         >>> model = apc.Model()
-        >>> model.data_from_df(apc.Belgian_lung_cancer()['response'],
-        >>>                    rate = apc.Belgian_lung_cancer()['rate'],
-        >>>                    data_format='AP')
+        >>> model.data_from_df(**apc.Belgian_lung_cancer())
         >>> model.fit('log_normal_rates', 'APC')
         >>> model.simulate(repetitions=5)
         >>> model.draws
         
-        Over-dispersed Poisson with negative binomial draws.
+        Over-dispersed Poisson with compound Poisson Gamma draws
         >>> import apc
         >>> model = apc.Model()
         >>> model.data_from_df(apc.loss_TA())
         >>> model.fit(family='od_poisson_response', predictor='AC')
-        >>> model.simulate(repetitions=10, od_poisson_dgp='neg_binomial')
+        >>> model.simulate(repetitions=10)
         >>> model.draws
         
         References
