@@ -13,9 +13,8 @@ class TestFitTable(unittest.TestCase):
         dev_table_Ad = model.fit_table(reference_predictor='Ad', 
                                         attach_to_self=False)
         
-        self.assertEqual(round(model.deviance,3), 1903014.004)
         self.assertTrue(np.allclose(
-            model.deviance_table.values,
+            model.deviance_table.astype(float).values,
             np.array([
                  [1.90301400e+06, 3.60000000e+01, 0.00000000e+00, np.nan, 
                   np.nan, np.nan, np.nan],
@@ -39,7 +38,7 @@ class TestFitTable(unittest.TestCase):
             equal_nan=True)
                        )
         self.assertTrue(np.allclose(
-            dev_table_Ad.values,
+            dev_table_Ad.astype(float).values,
             np.array([
                 [2.26975638e+06, 4.40000000e+01, 0.00000000e+00, np.nan, 
                  np.nan, np.nan, np.nan],
@@ -63,7 +62,7 @@ class TestFitTable(unittest.TestCase):
         model.fit_table()
         
         self.assertTrue(np.allclose(
-            model.deviance_table.values,
+            model.deviance_table.astype(float).values,
             np.array([
                 [ -4.48541926e+01,   1.80000000e+01, np.nan,
                   np.nan,   np.nan,   7.14580741e+00],
