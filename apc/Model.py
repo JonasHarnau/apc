@@ -2762,7 +2762,7 @@ class Model:
 
         response = self.data_vector['response'].sum(level=by).loc[flt]
         fitted = self.fitted_values.sum(level=by).rename('fitted').loc[flt]
-        point_fc = self.fc_distribution[by]['point forecast'].copy().loc[flt]
+        point_fc = self.forecasts[by]['point forecast'].copy().loc[flt]
         if ic:
             ic_factor = response.sort_index().iloc[-1]/fitted.sort_index().iloc[-1]
             point_fc *= ic_factor
@@ -2771,7 +2771,7 @@ class Model:
                 point_fc += response[point_fc.index]
             except KeyError:
                 pass
-        se_total = self.fc_distribution[by]['se total'].loc[flt]
+        se_total = self.forecasts[by]['se total'].loc[flt]
         ci1 = (point_fc - se_total, point_fc + se_total)
         ci2 = (point_fc - 2*se_total, point_fc + 2*se_total)
 
