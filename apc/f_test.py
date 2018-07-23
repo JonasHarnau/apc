@@ -5,6 +5,66 @@ import pandas as pd
 def f_test(model_full, sub_models):
     """
     F-test for common linear predictors.
+    
+    Performs an F-test for common linear predictors between model_full
+    and the combined sub_models. The idea is described in Harnau (2018).
+    The test checks whether we can reject that the linear predictors on
+    estimated on the sub_models can be estimated jointly on model_full.
+        
+    
+    Parameters
+    ----------
+    
+    model_full : apc.Model with prior call to Model().fit()
+                 The full model 
+                 
+    sub_models : list of apc.Model's with prior calls to Model().fit()
+                 List of sub_models. The data_vectors attached have to
+                 combine to the data_vector of the full_model
+                 
+    
+    Returns
+    -------
+    
+    dictionary with keys 'F_stat' and 'p_value'.
+    
+       
+    See also
+    --------
+    
+    Vignette in apc/vignettes/vignette_misspecification.ipynb.
+    
+    
+    Notes
+    -----
+    
+    For interpretation, small p-value speaks against the null hypothesis of common
+    linear predictors.
+    
+    Tests are valid for gaussian models, log-normal and over-dispersed Poisson
+    models (Harnau 2018) and generalized log-normal models (Kuang and Nielsen 2018).
+    
+    
+    References
+    ----------
+    Harnau, J. (2018). Misspecification Tests for Log-Normal and Over-Dispersed
+    Poisson Chain-Ladder Models. Risks, 6(2), 25. 
+    Open Access: https://doi.org/10.3390/RISKS6020025
+    
+    Kuang, D., & Nielsen, B. (2018). Generalized Log-Normal Chain-Ladder. 
+    ArXiv E-Prints, 1806.05939. Download from http://arxiv.org/abs/1806.05939
+    
+    
+    Examples
+    --------
+    
+    >>> model = apc.Model()
+    >>> model.data_from_df(apc.loss_VNJ())
+    >>> model.fit('log_normal_response', 'AC')
+    >>> sub_models = [model.sub_model(coh_from_to=(1,5)),
+    ...               model.sub_model(coh_from_to=(6,10))]
+    >>> apc.f_test(model, sub_models)
+    
     """
     sub_families = [sub_model.family for sub_model in sub_models]
     # Check if all models have the same family
