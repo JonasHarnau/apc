@@ -1275,6 +1275,7 @@ class Model:
         The user can choose what space to plot the heatmaps in, e.g. 'AC' got age-cohort
         space. 
         
+        
         Parameters
         ----------
         
@@ -1283,34 +1284,33 @@ class Model:
                           1955-1959, this determines if and how those should be 
                           transformed. Allows for prettier axis labels.
         
+        space : {'AC', 'AP', 'PA', 'PC', 'CA', 'CP'}, optional
+                Specifies what goes on the axes (A = Age, P = period, C = cohort). 
+                By default this is set to 'self.data_format'.
+        
         figsize : float tuple or list, optional
                   Specifies the figure size. If left empty matplotlib determines this
                   internally.
         
-        space : {'AC', 'AP', 'PA', 'PC', 'CA', 'CP'}, optional
-                Specifies what goes on the axes (A = Age, P = period, C = cohort). 
-                By default this is set to 'self.data_format'.
-            
         **kwargs : any kwargs that seaborn.heatmap can handle, optional
                    The kwargs are fed through to seaborn.heatmap. Note that these are
                    applied to all heatmap plots symmetrically.
-                   
+        
+        
         Returns
         -------
         
         Matplotlib figure attached to self.plotted_data_heatmaps
         
+        
         Examples
         --------
 
-        >>> import pandas as pd
-        >>> data = pd.read_excel('./data/Belgian_lung_cancer.xlsx', 
-        ...                      sheet_name = ['response', 'rates'], index_col = 0)
         >>> import apc
         >>> model = apc.Model()
-        >>> model.data_from_df(data['response'], rate=data['rates'], 
-        ...                    data_format='AP')
+        >>> model.data_from_df(**apc.Belgian_lung_cancer())
         >>> model.plot_data_heatmaps()
+        >>> model.plotted_data_heatmaps
         
         """    
         
