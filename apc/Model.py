@@ -2423,7 +2423,7 @@ class Model:
         ]
         return fc_design
 
-    def get_point_fc(self, attach_to_self=True):
+    def _get_point_fc(self, attach_to_self=True):
         """
         Generate point forecasts.
         """
@@ -2447,7 +2447,7 @@ class Model:
         if attach_to_self:
             self._fc_design = fc_design
             self._fc_linpred = fc_linpred
-            self.fc_point = fc_point
+            self._fc_point = fc_point
         else:
             return fc_point
 
@@ -2458,10 +2458,10 @@ class Model:
         Produce distribution forecasts
         """
         try:
-            fc_point = self.fc_point
+            fc_point = self._fc_point
         except AttributeError:
-            self.get_point_fc()
-            fc_point = self.fc_point
+            self._get_point_fc()
+            fc_point = self._fc_point
         
         if method is None:
             family = self.family
@@ -2488,10 +2488,10 @@ class Model:
         Produces closed form distribution forecasts.
         """
         try:
-            fc_point = self.fc_point
+            fc_point = self._fc_point
         except AttributeError:
-            self.get_point_fc()
-            fc_point = self.fc_point
+            self._get_point_fc()
+            fc_point = self._fc_point
         
         def _grp(df, agg):
             if agg is 'Cell': 
