@@ -2338,7 +2338,10 @@ class Model:
             elif trend == 'coh':
                 raw_label = self.design.groupby('Cohort').first().index
             raw_label = pd.Series(raw_label)
-            labels = self._simplify_range(raw_label, simplify_ranges)
+            if simplify_ranges is False:
+                labels = raw_label.values
+            else:
+                labels = self._simplify_range(raw_label, simplify_ranges)
             return labels
 
         if predictor in ('P', 'tP'):
