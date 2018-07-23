@@ -1823,21 +1823,18 @@ class Model:
         Examples
         --------
         
-        >>> import apc
         >>> model = apc.Model()
-        >>> model.data_from_df(
-        >>>     apc.Belgian_lung_cancer()['response'],
-        >>>     rate=apc.Belgian_lung_cancer()['rate'], 
-        >>>     data_format='AP'
-        >>> )
+        >>> model.data_from_df(**apc.Belgian_lung_cancer())
         >>> model.fit('gaussian_rates', 'APC')
         >>> model.identify()
-        >>> print(para_table_adhoc)
+        >>> model.para_table_adhoc
+        
         
         Notes
         -----
         
         The description is largely taken from the R package apc.
+        
         
         References
         ----------
