@@ -1536,6 +1536,7 @@ class Model:
         family. Unless otherwise specified, takes the model estimates as true values for the 
         data generating process.
         
+        
         Parameters
         ----------
         
@@ -1588,12 +1589,14 @@ class Model:
                         Default True. If this is True the output is attached to 
                         self.draws. If False the table is returned. (Default is True.)
         
+        
         Returns
         -------
         
         pandas.DataFrame of draws either directly or attached to Model().draws (see
         'attach_to_self'). The index of this dataframe corresponds to the index of 
         Model().fitted_values. The draws are in the columns. 
+        
         
         Examples
         --------
@@ -1612,6 +1615,7 @@ class Model:
         >>> model.fit(family='od_poisson_response', predictor='AC')
         >>> model.simulate(repetitions=10)
         >>> model.draws
+        
         
         References
         ----------
