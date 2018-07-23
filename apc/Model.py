@@ -2127,6 +2127,7 @@ class Model:
         for families '.poisson.response' and 'od.poisson.response' which use a multinomial
         sampling scheme (or akin to that 'od.poisson.response').
         
+        
         Parameters
         ----------
         
@@ -2146,40 +2147,29 @@ class Model:
         
         figsize : float tuple or list, optional
                   Specifies the figure size. (Default is (10,8).)
-                        
+
+
         Returns
         -------
         
-        Matplotlib figure(s) attached to self.plotted_fit. 
-        
+        Matplotlib figure attached to self.plotted_fit. 
+
+
         Notes
         -----
         
         Parts of the description are taken from the R package apc.
-        
+
+
         Examples
         --------
         
-        >>> import apc
         >>> model = apc.Model()
-        >>> model.data_from_df(
-        >>>     apc.Belgian_lung_cancer()['response'],
-        >>>     rate=apc.Belgian_lung_cancer()['rate'], 
-        >>>     data_format='AP'
-        >>> )
+        >>> model.data_from_df(**apc.Belgian_lung_cancer())
         >>> model.fit('gaussian_rates', 'APC')
         >>> model.plot_fit()
         >>> model.plotted_fit
-          
-        References
-        ----------
-        
-        Nielsen, B. (2014) Deviance analysis of age-period-cohort models.
-        Nuffield Discussion Paper 2014-W03
-        
-        Nielsen, B. (2015) apc: An R package for age-period-cohort analysis. 
-        R Journal 7, 52-64.
-        
+                
         """
         fig, ax = plt.subplots(ncols=3, nrows=3, figsize=figsize)
         # first column is age, second period, third cohort. 
