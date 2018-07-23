@@ -2727,8 +2727,8 @@ class Model:
         if transform is not None:
             residuals = transform(residuals)
         
-        self.plotted_residuals = self._plot_heatmaps(residuals, simplify_ranges, space,
-                                                     figsize, **kwargs)
+        self.plotted_residuals = self._plot_heatmaps(pd.DataFrame(residuals), simplify_ranges,
+                                                     space, figsize, **kwargs)
     
     def plot_forecast(self, by='Period', ic=False, from_to=(None, None),
                       aggregate=False):
