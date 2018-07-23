@@ -1087,7 +1087,7 @@ class Model:
                 p_deviance = 1 - stats.chi2.cdf(sub_deviance, sub_df)
                 idx = ('deviance', 'df_resid', 'P>chi_sq', 
                        'LR_vs_{}'.format(reference_predictor), 
-                       'df_vs_{}'.format(reference_predictor), 'P_chi_sq')
+                       'df_vs_{}'.format(reference_predictor), 'P>chi_sq')
                 values = (sub_deviance, sub_df, p_deviance, LR, df, p_LR)                
             elif family is 'od_poisson_response':
                 if ref_fit['predictor'] == sub_fit['predictor']:
