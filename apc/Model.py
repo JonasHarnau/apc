@@ -1328,17 +1328,26 @@ class Model:
         """
         
         Internal function for heatmap plotting.
-        
+
+
         Parameters
         ----------
         
         See plot_data_heatmaps for specifics on the inputs.
-        
+
+
         Returns
         -------
         
         Matplotlib figure
         
+
+        Called by
+        ---------
+        
+        plot_data_heatmaps
+        plot_residuals
+
         """
         
         if space is None:
