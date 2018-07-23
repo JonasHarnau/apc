@@ -1313,7 +1313,15 @@ class Model:
         
         Internal function for heatmap plotting.
         
+        Parameters
+        ----------
+        
         See plot_data_heatmaps for specifics on the inputs.
+        
+        Returns
+        -------
+        
+        Matplotlib figure
         
         """
         
