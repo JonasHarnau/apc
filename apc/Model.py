@@ -1342,11 +1342,10 @@ class Model:
         Matplotlib figure
         
 
-        Called by
-        ---------
+        See also
+        --------
         
-        plot_data_heatmaps
-        plot_residuals
+        Called by Model().plot_data_heatmaps and Model().plot_residuals.
 
         """
         
