@@ -2708,7 +2708,7 @@ class Model:
                                                      space, figsize, **kwargs)
     
     def plot_forecast(self, by='Period', ic=False, from_to=(None, None),
-                      aggregate=False):
+                      aggregate=False, figsize=None):
         """
         Plot forecast over a specified time dimension.
 
@@ -2778,7 +2778,7 @@ class Model:
         ci1 = (point_fc - se_total, point_fc + se_total)
         ci2 = (point_fc - 2*se_total, point_fc + 2*se_total)
 
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=figsize)
         response.plot(ax=ax, style='o')
         fitted.plot(ax=ax, style='k-')
         point_fc.plot(ax=ax, style='k--')
