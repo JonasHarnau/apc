@@ -1758,6 +1758,7 @@ class Model:
     def sub_model(self, age_from_to=(None,None), per_from_to=(None,None), 
                   coh_from_to=(None,None), fit=True):
         """
+        
         Generate a model from specified sub-sample.
         
         Generates a model with a sub-sample of data attached to it. If not otherwise specified,
@@ -1804,6 +1805,7 @@ class Model:
         This function is also useful for the misspecification tests apc.bartlett_test() and 
         apc.f_test().
         
+        
         Examples
         --------
         
@@ -1817,19 +1819,25 @@ class Model:
         >>> model.data_from_df(**apc.Belgian_lung_cancer())
         >>> model.sub_model(age_from_to=('30-34', '65-69'))
         
-        
         """
         
         sub_sample = self.sub_sample(age_from_to, per_from_to, coh_from_to)
         if sub_sample.empty:
             raise ValueError('Sub-sample is empty')
         # Reshape into array so we can use the data_from_df functionality.
-        sub_array = sub_sample.reset_index().pivot(index='Age', columns='Cohort', 
-                                                   values='response')
+        space = self.data_format
+        if space == 'CL':
+            space = 'CA'
+        sub_response = self._vector_to_array(sub_sample['response'], space)
+        try:
+            sub_dose = self._vector_to_array(sub_sample['dose'], space)
+        except KeyError:
+            sub_dose = None
         sub_model = Model()
-        sub_model.data_from_df(sub_array, data_format='AC', time_adjust=self.time_adjust)
+        sub_model.data_from_df(sub_response, sub_dose, data_format=self.data_format, 
+                               time_adjust=self.time_adjust)
         if fit:
-            sub_model.fit(family=self.family, predictor=self.predictor)
+            sub_model.fit(self.family, self.predictor)
         return sub_model
 
     def identify(self, style='detrend', attach_to_self=True):
