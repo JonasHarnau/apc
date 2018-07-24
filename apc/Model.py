@@ -2442,9 +2442,9 @@ class Model:
 
         if self.family in ('poisson_response', 'log_normal_response', 
                         'od_poisson_response'):
-            fc_point = np.exp(fc_linpred).rename('point forecast')
+            fc_point = np.exp(fc_linpred).rename('point_forecast')
         elif self.family in ('gaussian_response'):
-            fc_point = fc_linpred.rename('point forecast')
+            fc_point = fc_linpred.rename('point_forecast')
         else:
             raise ValueError('Currently supports only "poisson_response", ' +
                              '"log_normal_response", "od_poisson_response"' +
@@ -2593,7 +2593,7 @@ class Model:
                     else 0, idx, name='se_estimation_tau')
                 # total error
                 se_total = np.sqrt(se_proc**2 + se_e_xi**2 + se_e_tau**2).rename(
-                    'se total')
+                    'se_total')
                 
                 #quantiles
                 try:
@@ -2601,7 +2601,7 @@ class Model:
                            else stats.norm.ppf(qs))
                     quants = pd.DataFrame(
                         (fc_point_A.values + np.outer(se_total, cvs).T).T, 
-                        idx, [str(q) + '% quantile' for q in np.asarray(qs) * 100])
+                        idx, ['q_' + str(q) for q in np.asarray(qs)])
                 except: # happens if no quantiles provided
                     quants = None
 
@@ -2770,7 +2770,7 @@ class Model:
 
         response = self.data_vector['response'].sum(level=by).loc[flt]
         fitted = self.fitted_values.sum(level=by).rename('fitted').loc[flt]
-        point_fc = self.forecasts[by]['point forecast'].copy().loc[flt]
+        point_fc = self.forecasts[by]['point_forecast'].copy().loc[flt]
         if ic:
             ic_factor = response.sort_index().iloc[-1]/fitted.sort_index().iloc[-1]
             point_fc *= ic_factor
@@ -2779,7 +2779,7 @@ class Model:
                 point_fc += response[point_fc.index]
             except KeyError:
                 pass
-        se_total = self.forecasts[by]['se total'].loc[flt]
+        se_total = self.forecasts[by]['se_total'].loc[flt]
         ci1 = (point_fc - se_total, point_fc + se_total)
         ci2 = (point_fc - 2*se_total, point_fc + 2*se_total)
 
