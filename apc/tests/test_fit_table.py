@@ -141,5 +141,19 @@ class TestFitTable(unittest.TestCase):
             equal_nan=True)
                        )
 
+    def test_Belgian_poisson_dose_response(self):
+        model = apc.Model()
+        model.data_from_df(**apc.Belgian_lung_cancer())
+        model.fit_table('poisson_dose_response', 'APC')
+        
+        self.assertTrue(np.allclose(
+            model.deviance_table.astype(float).sum().values,
+            np.array([
+                2.33052840e+04, 5.08000000e+02, 2.12588574e+00, 2.30019096e+04,
+                2.38000000e+02, 2.44351741e+00
+            ]), 
+            equal_nan=True)
+                       )
+        
 if __name__ == '__main__':
     unittest.main()
