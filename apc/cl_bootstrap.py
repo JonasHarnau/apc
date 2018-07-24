@@ -61,12 +61,81 @@ def _chain_ladder(df, target_idx):
 
     return fc_point.astype(float)
 
-def bootstrap_forecast(model, qs=[0.75, 0.9, 0.95, 0.99], B=999, adj_residuals=True, seed=None):
+def bootstrap_forecast(model, quantiles=[0.75, 0.9, 0.95, 0.99], B=999, 
+                       adj_residuals=True, seed=None):
     """
-    Generate bootstrap forecasts
+    Generate bootstrap forecasts.
+    
+    Generates bootstrap forecasts for chain-ladder run-off triangles based on 
+    the bootstrap technique in England and Verrall (1999) and England (2002).
+    
+    
+    Parameters
+    ----------
+    
+    model : apc.Model() Class
+            A model after Model().data_from_df() was run.
+    
+    quantiles : iterable of floats in (0, 1), optional
+                The quantiles for which the distribution forecast should be computed. 
+                (Default is [0.75, 0.9, 0.95, 0.99].)
+                
+    B : int, optional
+        The number of bootstrap draws. (Default is 999.)
+
+    adj_residuals : bool, optional
+                    Determines whether residuals are adjusted by n/df_resid. (Default 
+                    is True.)
+    
+    seed : int, optional
+       The random seed used to generate the draws.
+    
+    
+    Returns
+    -------
+    
+    dictionary of pandas.DataFrame's with keys 'Cell', 'Age', 'Period', 'Cohort', 'Total'.
+    DataFrames contain descriptive statistics over bootstrap draws, including mean, 
+    standard deviation, median etc.
+    
+    
+    See also
+    --------
+    
+    Vignette in apc/vignettes/vignette/over_dispersed_apc.ipynb.
+    
+    
+    Notes
+    -----
+    
+    The function uses the chain-ladder technique for computation to both speed
+    things up and to allow for negative values which are excluded by the standard
+    Poisson fit procedure with statsmodels. The chain-ladder technique corresponds 
+    to an age-cohort Poisson (and over-dispersed Poisson) model in run-off triangles.
+    As such, the function cannot handle any other predictors or data shapes.
+    
+    
+    References
+    ----------
+    
+    England, P., & Verrall, R. (1999). Analytic and bootstrap estimates of 
+    prediction errors in claims reserving. Insurance: Mathematics and Economics, 
+    25(3), 281–293. 
+    
+    England, P. D. (2002). Addendum to “Analytic and bootstrap estimates of
+    prediction errors in claims reserving.” Insurance: Mathematics and Economics,
+    31(3), 461–466.
+    
+    Examples
+    --------
+    
+    >>> model = apc.Model()
+    >>> model.data_from_df(apc.loss_TA(), data_format='CL')
+    >>> model.fit('od_poisson_response', 'AC')
+    >>> apc.bootstrap_forecast(model)
+    
     """
     np.random.seed(seed)
-    #generate Pearson residuals
     rsdls = model.residuals['pearson']
     if adj_residuals:
         rsdls *= np.sqrt(model.n/model.df_resid)
