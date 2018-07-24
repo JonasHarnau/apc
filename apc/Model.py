@@ -1089,7 +1089,8 @@ class Model:
                 idx = ('-2logL', 'df_resid', 'LR_vs_{}'.format(reference_predictor), 
                        'df_vs_{}'.format(reference_predictor), 'P_exact', 'aic')
                 values = (sub_deviance, sub_df, LR, df, p_LR, sub_aic)
-            elif family in ('poisson_response', 'binomial_dose_response'):
+            elif family in ('poisson_response', 'poisson_dose_response',
+                            'binomial_dose_response'):
                 p_deviance = 1 - stats.chi2.cdf(sub_deviance, sub_df)
                 idx = ('deviance', 'df_resid', 'P>chi_sq', 
                        'LR_vs_{}'.format(reference_predictor), 
