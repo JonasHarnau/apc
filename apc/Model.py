@@ -1837,7 +1837,10 @@ class Model:
         sub_model.data_from_df(sub_response, sub_dose, data_format=self.data_format, 
                                time_adjust=self.time_adjust)
         if fit:
-            sub_model.fit(self.family, self.predictor)
+            try:
+                sub_model.fit(self.family, self.predictor)
+            except AttributeError: # if no model had been fit before.
+                pass
         return sub_model
 
     def identify(self, style='detrend', attach_to_self=True):
