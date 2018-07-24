@@ -62,6 +62,13 @@ class TestSimulate(unittest.TestCase):
         model.fit('binomial_dose_response', 'Ad')
         model.simulate(repetitions=10)
         model.simulate(repetitions=10, fitted_values=model.fitted_values * 10)
-        
+
+    def test_Belgian_pois_dose_response(self):
+        model = apc.Model()
+        model.data_from_df(**apc.Belgian_lung_cancer())
+        model.fit('poisson_dose_response', 'APC')
+        model.simulate(repetitions=10)
+        model.simulate(repetitions=10, fitted_values=model.fitted_values * 10)
+                
 if __name__ == '__main__':
     unittest.main()
