@@ -1,19 +1,40 @@
 import numpy as np
 import pandas as pd
 
-def chain_ladder(model, df, target_idx):
+def _chain_ladder(df, target_idx):
     """
     Generates chain-ladder point forecasts for arrays.
 
     The function allows for vectorized chain-ladder estimation for more then one
     sample. Still, it is not quite tuned for top efficiency. However, it can deal
     with negative values as sometimes encountered in bootstrap draws.
+    
+    
+    Parameters
+    ----------
+    
+    df : pandas.DataFrame with age-period-cohort MultiIndex
+         A dataframe with an index such as the data_vector output by 
+         Model().data_from_df() or the draws output by Model().simulate().
+
+    target_idx : pandas.MultiIndex of the target array
+                 Index corresponding to the cells of the target array for
+                 forecasting.
+                 
+    
+    Returns
+    -------
+    
+    pandas.DataFrame with index corresponding to target_idx and as many columns
+    as df has. Contains the chain-ladder point forecasts.
+
     """
     df = df.reset_index().set_index(['Age', 'Cohort', 'Period']).sort_index()
     age_min, age_max = df.index.levels[0].min(), df.index.levels[0].max()
     coh_min, coh_max = df.index.levels[1].min(), df.index.levels[1].max()
-    per_max, time_adjust = df.index.levels[2].max(), model.time_adjust
-
+    per_max = df.index.levels[2].max()
+    time_adjust = coh_max - per_max + 1
+    
     # row-sums in a run-off triangle
     coh_sums = df.sum(level='Cohort')
 
@@ -57,7 +78,7 @@ def bootstrap_forecast(model, qs=[0.75, 0.9, 0.95, 0.99], B=999, adj_residuals=T
 
     # chain ladder estimation to deal with negatives
     target_index = model._get_fc_design('AC').index
-    bs_fc_point = chain_ladder(model, rlzd_insmpl, target_index)
+    bs_fc_point = _chain_ladder(rlzd_insmpl, target_index)
 
     # now for the process error
     scale = (rsdls**2).sum()/model.df_resid
