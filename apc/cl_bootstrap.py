@@ -136,7 +136,7 @@ def bootstrap_forecast(model, quantiles=[0.75, 0.9, 0.95, 0.99], B=999,
     
     """
     np.random.seed(seed)
-    rsdls = model.residuals['pearson']
+    rsdls = model.residuals['pearson'].copy()
     if adj_residuals:
         rsdls *= np.sqrt(model.n/model.df_resid)
 
