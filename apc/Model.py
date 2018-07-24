@@ -2485,8 +2485,10 @@ class Model:
         Returns
         -------
         
-        dictionary of pandas.DataFrame's with keys 'Age', 'Period', 'Cohort', 'Total' and 
-        'method' attached to self.forecasts if 'attach_to_self' is True and returned otherwise.
+        dictionary of pandas.DataFrame's with keys 'Cell', 'Age', 'Period', 'Cohort', 'Total'
+        and 'method'. Attached to self.forecasts if 'attach_to_self' is True and returned 
+        otherwise. The DataFrames contain point forecasts, standard errors broken down into 
+        process and estimation error, and quantiles of the forecast distribution.
         
         
         Raises
