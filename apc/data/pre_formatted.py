@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from pkg_resources import resource_filename
 
 def loss_TA():
     """
@@ -309,8 +310,8 @@ def asbestos(sample='2007', balanced=True):
     Open Access: https://journal.r-project.org/archive/2015-2/nielsen.pdf
     
     """
-    
-    asbestos = pd.read_excel('apc/data/asbestos_mortality.xlsx', sample, index_col='Period')
+    asbestos = pd.read_excel(resource_filename('apc', 'data/asbestos_mortality.xlsx'), 
+                             sample, index_col='Period')
     asbestos.columns.name = 'Age'
     
     if balanced:
