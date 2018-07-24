@@ -1570,8 +1570,8 @@ class Model:
                  process. Ignored for Poisson and binomial families. 
         
         poisson_dgp : {'poisson', 'multinomial'}, optional
-                      Only relevant for Poisson families. If set to 'poisson', the
-                      data generating process is Poisson. If set to 'multinomial',
+                      Only relevant for family 'poisson_response'. If set to 'poisson', 
+                      the data generating process is Poisson. If set to 'multinomial',
                       the data generating process is multinomial with total number
                       of trials equal to the sum of 'fitted_values' and cell-wise
                       probabilities set to 'fitted_values/sum(fitted_values)'. This
@@ -1645,6 +1645,7 @@ class Model:
             if fitted_values is None:
                 fitted_values = self.fitted_values
             if (sigma2 is None) and (family not in ('poisson_response',
+                                                    'poisson_dose_response',
                                                     'binomial_dose_response')):
                 sigma2 = self.s2
             if (dose is None) and (family == 'binomial_dose_response'):
@@ -1658,6 +1659,9 @@ class Model:
                     tau = fitted_values.sum()
                     p = fitted_values/tau                    
                     draws = np.random.multinomial(tau,p, size=repetitions)
+            elif family == 'poisson_dose_response':
+                means = fitted_values
+                draws = np.random.poisson(means, size=(repetitions, n))                
             elif family == 'od_poisson_response':
                 if od_poisson_dgp == 'cpg':
                     means = fitted_values
