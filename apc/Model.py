@@ -2528,106 +2528,118 @@ class Model:
         
         if method is None:
             family = self.family
-            if family == 'poisson_response':
+            if family == 'gaussian_response':
+                method = 'n_gauss'
+            elif family == 'poisson_response':
                 method = 'n_poisson'
             elif family == 'od_poisson_response':
                 method = 't_odp'
-            #elif family == 'gen_log_normal_response':
-            #    method = 't_gln'
+            elif family in ('log_normal_response', 'gen_log_normal_response'):
+                method = 't_gln'
+            else:
+                raise ValueError('Forecasting not supported for this family.')
         
-        fc_results = self._get_fc_closed_form(quantiles, method)
+        self._get_point_fc()
+        
+        def _agg(df, lvl):
+            if lvl == 'Cell':
+                return df
+            elif lvl in ('Age', 'Period', 'Cohort'):
+                return df.sum(level=lvl)
+            else:
+                try:
+                    return pd.DataFrame(df.sum(), columns=['Total']).T
+                except ValueError: # scalar case
+                    return pd.Series(df.sum(), index=['Total'], name=df.name)
+
+        def _get_process_error(method, lvl):
+            fc_point = _agg(self._fc_point, lvl)
+            if method == 'n_gauss':
+                pe_sq = pd.Series(self.s2, fc_point.index).rename('se_process')
+            elif method == 'n_poisson':
+                pe_sq = fc_point.rename('se_process')
+            elif method == 't_odp':
+                pe_sq = fc_point.rename('se_process') * self.s2
+            elif method == 't_gln':
+                pe_sq = fc_point.rename('se_process')**2 * self.s2
+            return np.sqrt(pe_sq)
+
+        def _get_estimation_error(method, lvl):
+            cov = self.cov_canonical
+            if method == 'n_gauss':
+                fc_X_A = _agg(self._fc_design, lvl)
+                se_sq = pd.Series(
+                    np.diag(fc_X_A.dot(cov).dot(fc_X_A.T)), 
+                    fc_X_A.index, name='se_estimation_xi')
+            elif method in ('n_poisson', 't_odp'):
+                # estimation error for xi2
+                X2, fc_X2 = self.design.iloc[:,1:], self._fc_design.iloc[:,1:]
+                tau = self.fitted_values.sum()
+                i_xi2_inv = cov.iloc[1:,1:] * tau
+                pi = self.fitted_values/tau
+                fc_H = fc_X2 - pi.dot(X2)
+                fc_point = self._fc_point
+                fc_pi = fc_point/tau
+                fc_pi_H = (fc_pi * fc_H.T).T
+                fc_pi_H_A = _agg(fc_pi_H, lvl)
+                s_A_2 = np.einsum('ip,ip->i', fc_pi_H_A.dot(i_xi2_inv*tau), fc_pi_H_A)
+                se_sq = pd.Series(s_A_2, fc_pi_H_A.index, name='se_estimation_xi2')
+            elif method == 't_gln':
+                fc_point = self._fc_point
+                fc_X = self._fc_design
+                fctr_A = _agg((fc_point * fc_X.T).T, lvl)
+                se_sq = pd.Series(
+                    np.diag(fctr_A.dot(cov).dot(fctr_A.T)), 
+                    fctr_A.index, name='se_estimation_xi')
+
+            if method == 't_odp':
+                pi_A = _agg(fc_pi, lvl)
+                se_sq = pd.concat([
+                    se_sq, 
+                    pd.Series(pi_A**2 * tau * self.s2, 
+                              pi_A.index, name='se_estimation_tau')
+                ], axis=1)
+
+            return np.sqrt(se_sq)
+
+        def _get_total_error(se_process, se_estimation):
+            st_sq = pd.concat([
+                se_process**2, se_estimation**2
+            ], axis=1).sum(axis=1).rename('se_total')
+            return np.sqrt(st_sq)
+
+        def _get_quantiles(qs, method, lvl, se_total):
+            if qs is None:
+                qs = []
+            if method in ('n_gauss', 't_odp', 't_gln'):
+                cvs = stats.t.ppf(qs, self.df_resid)
+            elif method == 'n_poisson':
+                cvs = stats.norm.ppf(qs)
+            fc_point_A = _agg(self._fc_point, lvl)
+            return pd.DataFrame(
+                (fc_point_A.values + np.outer(se_total, cvs).T).T, 
+                fc_point_A.index, ['q_' + str(q) for q in np.asarray(qs)])
+
+        def _get_fc_table(qs, method, lvl):
+            point_fc = _agg(self._fc_point, lvl)
+            se_proc = _get_process_error(method, lvl)
+            se_est = _get_estimation_error(method, lvl)
+            se_total = _get_total_error(se_proc, se_est)
+            quants = _get_quantiles(qs, method, lvl, se_total)
+            table = pd.concat([
+                point_fc, se_total, se_proc, se_est, quants
+            ], axis=1).astype(object)
+            return table
+        
+        fc_results = {}
+        for lvl in ('Cell', 'Age', 'Period', 'Cohort', 'Total'):
+            fc_results[lvl] = _get_fc_table(quantiles, method, lvl)
+        fc_results['method'] = method
         
         if attach_to_self:
             self.forecasts = fc_results
         else:
             return fc_results
-
-    def _get_fc_closed_form(self, qs, method):
-        """
-        Produces closed form distribution forecasts.
-        """
-        try:
-            fc_point = self._fc_point
-        except AttributeError:
-            self._get_point_fc()
-            fc_point = self._fc_point
-        
-        def _grp(df, agg):
-            if agg is 'Cell': 
-                return df
-            elif agg in ('Age', 'Period', 'Cohort'):
-                return df.sum(level=agg)
-            elif agg == 'Total':
-                try:
-                    tmp = pd.DataFrame(df.sum(), columns=['Total']).T
-                except ValueError: # Scalar case
-                    tmp = pd.Series(df.sum(), index=['Total'], name=df.name)
-                return tmp
-        
-        if method in ('n_poisson', 't_odp'):
-            sigma2 = self.s2 if method == 't_odp' else 1            
-            tau = self.fitted_values.sum()
-            # compute H_ik for forecast array
-            fc_X2 = self._fc_design.iloc[:, 1:]
-            in_smpl_X2 = self.design.iloc[:, 1:]
-            in_smpl_pi = self.fitted_values/tau
-            fc_H = fc_X2 - in_smpl_pi.dot(in_smpl_X2)
-            # compute pi_ik for forecast array
-            fc_pi = fc_point/tau
-            # term to sum later depending on the set of interest A
-            fc_pi_H_prod = (fc_pi * fc_H.T).T
-            # information matrix, adjust to match notation in papers       
-            i_xi2_inv = self.cov_canonical.iloc[1:,1:] * tau
-            if self.family == 'od_poisson_response':
-                i_xi2_inv /= self.s2
-
-            fc_results = {}
-
-            for agg in ('Cell', 'Age', 'Cohort', 'Period', 'Total'):
-                fc_point_A = _grp(fc_point, agg)
-                pi_A = _grp(fc_pi, agg)
-                pi_H_prod_A = _grp(fc_pi_H_prod, agg)
-
-                idx = fc_point_A.index
-                   
-                # process error
-                
-                se_proc = pd.Series(np.sqrt(pi_A * sigma2  * tau), idx, name='se_process')
-                # estimation error
-                # for xi
-                s_A_2 = np.einsum('ip,ip->i', pi_H_prod_A.dot(i_xi2_inv), pi_H_prod_A)
-                se_e_xi = pd.Series(
-                    np.sqrt(s_A_2 * sigma2 * tau), idx, name='se_estimation_xi2')
-                # for tau (only if over-dispersed Poisson)
-                se_e_tau = pd.Series(
-                    np.sqrt(pi_A**2 * sigma2 * tau) if method == 't_odp' 
-                    else 0, idx, name='se_estimation_tau')
-                # total error
-                se_total = np.sqrt(se_proc**2 + se_e_xi**2 + se_e_tau**2).rename(
-                    'se_total')
-                
-                #quantiles
-                try:
-                    cvs = (stats.t.ppf(qs, self.df_resid) if method == 't_odp'
-                           else stats.norm.ppf(qs))
-                    quants = pd.DataFrame(
-                        (fc_point_A.values + np.outer(se_total, cvs).T).T, 
-                        idx, ['q_' + str(q) for q in np.asarray(qs)])
-                except: # happens if no quantiles provided
-                    quants = None
-
-                table = pd.concat(
-                    [fc_point_A, 
-                     se_total, 
-                     se_proc, se_e_xi, se_e_tau if method == 't_odp' else None, 
-                     quants], axis=1)
-
-                fc_results[agg] = table
-                fc_results['method'] = method
-            
-            return fc_results
-        else:
-            raise ValueError('"method" not recognized.')
 
     def clone(self):
         """
