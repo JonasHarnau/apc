@@ -4,10 +4,23 @@ import matplotlib.pyplot as plt
 
 class TestPlotFit(unittest.TestCase):
 
-    def test_BZ(self):
+    def test_TA(self):
         model = apc.Model()
-        model.data_from_df(apc.asbestos(), data_format='CL')
-        model.fit('od_poisson_response', 'AC')
+        model.data_from_df(apc.loss_TA(), data_format='CL')
+        model.fit('od_poisson_response', 'Ad')
+        model.plot_fit()
+        for style in ('detrend', 'sum_sum'):
+            model.plot_fit(style)
+        plt.close('all')
+        for sr in ('start', 'mean', 'end', False):
+            model.plot_fit(simplify_ranges=sr)
+        plt.close('all')
+        model.plot_fit(around_coef=False)
+        
+    def test_asbestos(self):
+        model = apc.Model()
+        model.data_from_df(apc.asbestos(), data_format='PA')
+        model.fit('poisson_response', 'AC')
         model.plot_fit()
         for style in ('detrend', 'sum_sum'):
             model.plot_fit(style)
