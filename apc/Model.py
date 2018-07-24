@@ -579,7 +579,7 @@ class Model:
         Parameters
         ----------
     
-        family : {"binomial_dose_response", 
+        family : {"binomial_dose_response", "poisson_dose_response", 
                   "poisson_response", "od_poisson_response", 
                   "gaussian_rates", "gaussian_response", 
                   "log_normal_rates", "log_normal_response"}
@@ -589,6 +589,8 @@ class Model:
                       used. Inference is done in a multinomial model, 
                       conditioning on the overall level as documented in
                       Martinez Miranda, Nielsen and Nielsen (2015).
+                  "poisson_dose_response"
+                      Poisson family with log link and doses as offset.
                   "od_poisson_response"
                       Poisson family with log link. Only responses are 
                       used. Inference is done in an over-dispersed Poisson
@@ -750,7 +752,7 @@ class Model:
         """
         
         ## Model family
-        supported_families = ("binomial_dose_response", 
+        supported_families = ("binomial_dose_response", "poisson_dose_response",
                               "poisson_response", "od_poisson_response",
                               "gaussian_rates", "gaussian_response", 
                               "log_normal_rates", "log_normal_response")
@@ -772,11 +774,15 @@ class Model:
             dose = self.data_vector['dose']
         elif family in ('gaussian_rates', 'log_normal_rates'):
             rate = self.data_vector['rate']
+        elif family in ('poisson_dose_response'):
+            offset = np.log(self.data_vector['dose'])
         
         # Create the glm object
         if family is 'binomial_dose_response':
             glm = sm.GLM(pd.concat((response, dose - response), axis = 1), design, 
-                         family=sm.families.Binomial())    
+                         family=sm.families.Binomial())
+        elif family == 'poisson_dose_response':
+            glm = sm.GLM(response, design, family=sm.families.Poisson(), offset=offset)
         elif family in ('poisson_response', 'od_poisson_response'):
             glm = sm.GLM(response, design, 
                          family=sm.families.Poisson())        
