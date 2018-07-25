@@ -875,11 +875,9 @@ class Model:
         else:
             return output
     
-    def fit_table(self, family=None, reference_predictor=None, 
-                  design_components=None, attach_to_self=True):
-        
+    def fit_table(self, family=None, reference_predictor=None, design_components=None, 
+                  attach_to_self=True):
         """
-         
         Produces a deviance table.
         
         'fit_table' produces a deviance table for up to 15 combinations of
@@ -890,36 +888,37 @@ class Model:
         from that point onwards. Nielsen (2015) who elaborates on the 
         equivalent function of the R package apc.
         
-        
         Parameters
         ----------
         
-        family : see help for Model().fit() for a description (optional)
-                 If not specified attempts to read from self.
+        family : {"binomial_dose_response", "poisson_dose_response", 
+                  "poisson_response", "od_poisson_response", 
+                  "gaussian_rates", "gaussian_response", 
+                  "log_normal_rates", "log_normal_response",
+                  "gen_log_normal_response"}, optional
+                 See help for Model().fit() for a description. If not specified attempts to 
+                 read from self.
         
         model_design : see help for Model().fit() for a description (optional)
                        If not specified attempts to read from self.
         
         reference_predictor : {"APC", "AP", "AC", "PC", "Ad", "Pd", "Cd", 
-                               "A", "P", "C", "t", "tA", "tP", "tC"} (optional)
-                              The 'reference_predictor' determines the baseline
-                              relative to which the deviance table is computed. 
-                              All sub-models nested in the 'reference_predictor'
-                              are considered. If left empty, this is set to
-                              'Model().predictor' so the table would be computed
-                              relative to the last fitted model. If this is
-                              empty as well, it is set to 'APC'.
+                               "A", "P", "C", "t", "tA", "tP", "tC"}, optional
+                              The 'reference_predictor' determines the baseline relative to 
+                              which the deviance table is computed. All sub-models nested in 
+                              the 'reference_predictor' are considered. If left empty, this is
+                              set to 'Model().predictor' so the table would be computed
+                              relative to the last fitted model. If this is empty as well, it 
+                              is set to 'APC'.
 
-        design_components : pandas.DataFrame (optional)
-                            Output of Model()._get_design_components(). Can 
-                            speed up computations if 'fit_table' is called 
-                            repeatedly. If not provided this is computed 
-                            internally.
+        design_components : pandas.DataFrame, optional
+                            Output of Model()._get_design_components(). Can speed up 
+                            computations if 'fit_table' is called repeatedly. If not provided 
+                            this is computed internally.
                             
-        attach_to_self : bool (optional)
-                         Default True. If this is True the deviance_table is
-                         attached to self.deviance_table. If False the table
-                         is returned.
+        attach_to_self : bool, optional
+                         Default True. If this is True the deviance_table is attached to 
+                         self.deviance_table. If False the table is returned. (Default is True.)
         
         Returns
         -------
@@ -1037,9 +1036,7 @@ class Model:
             sub_predictors = ["tA", "tP", "tC", "1"]
         
         def _fill_row(ref_fit, sub_fit):
-            
             family, reference_predictor = ref_fit['family'], ref_fit['predictor']
-            
             ref_deviance, sub_deviance = ref_fit['deviance'], sub_fit['deviance']
             ref_df, sub_df = ref_fit['df_resid'], sub_fit['df_resid']
             n = self.n
@@ -1047,35 +1044,35 @@ class Model:
                 sub_aic = sub_fit['aic']
             except KeyError:
                 pass
-            
             if ref_fit['predictor'] == sub_fit['predictor']:
                 LR, df, p_LR = np.nan, np.nan, np.nan
             else:
                 LR, df = sub_deviance - ref_deviance, sub_df - ref_df
-                if family in ('gaussian_rates', 'gaussian_response', 
-                              'log_normal_rates', 'log_normal_response'):
-                    F_from_lr = (np.exp(LR/n) - 1) * ref_df/df
-                    p_LR = stats.f.sf(F_from_lr, df, ref_df)
-                else:
-                    p_LR = 1 - stats.chi2.cdf(LR, df)
             
             if family in ('gaussian_rates', 'gaussian_response', 
-                          'log_normal_rates', 'log_normal_response'):
+                          'log_normal_rates', 'log_normal_response',
+                          'gen_log_normal_response'):
+                F = (np.exp(LR/n) - 1) * ref_df/df
+                p_F = stats.f.sf(F, df, ref_df)
+
                 idx = ('-2logL', 'df_resid', 'LR_vs_{}'.format(reference_predictor), 
-                       'df_vs_{}'.format(reference_predictor), 'P_exact', 'aic')
-                values = (sub_deviance, sub_df, LR, df, p_LR, sub_aic)
+                       'df_vs_{}'.format(reference_predictor), 
+                       'F_vs_{}'.format(reference_predictor), 'P>F', 'aic')
+                values = (sub_deviance, sub_df, LR, df, F, p_F, sub_aic)
             elif family in ('poisson_response', 'poisson_dose_response',
                             'binomial_dose_response'):
                 p_deviance = 1 - stats.chi2.cdf(sub_deviance, sub_df)
-                idx = ('deviance', 'df_resid', 'P>chi_sq', 
+                p_LR = 1 - stats.chi2.cdf(LR, df)
+                
+                idx = ('deviance', 'df_resid', 'P>chi_sq',
                        'LR_vs_{}'.format(reference_predictor), 
                        'df_vs_{}'.format(reference_predictor), 'P>chi_sq')
-                values = (sub_deviance, sub_df, p_deviance, LR, df, p_LR)                
+                values = (sub_deviance, sub_df, p_deviance, LR, df, p_LR)
             elif family == 'od_poisson_response':
                 if ref_fit['predictor'] == sub_fit['predictor']:
                     F, p_F = np.nan, np.nan
                     p_deviance = 1 - stats.chi2.cdf(sub_deviance, sub_df)
-                else:                    
+                else:
                     F = (LR/df) / (ref_deviance/ref_df)
                     p_F = 1 - stats.f.cdf(F, df, ref_df)
                     p_deviance = np.nan
@@ -1084,7 +1081,7 @@ class Model:
                        'df_vs_{}'.format(reference_predictor), 
                        'F_vs_{}'.format(reference_predictor), 'P>F')
                 values = (sub_deviance, sub_df, p_deviance, LR, df, F, p_F)
-                
+            
             return pd.Series(values, idx)
         
         ref_fit = self.fit(family, reference_predictor, design_components,
