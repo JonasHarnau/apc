@@ -27,6 +27,7 @@ class Model:
             print(kwargs.keys())
             for key, value in kwargs.items():
                 setattr(self, key, value)
+        self.plot_fit = self.plot_parameters
 
     def data_from_df(self, response, dose=None, rate=None, 
                      data_format=None, time_adjust=None):
@@ -2180,8 +2181,8 @@ class Model:
         else:
             return parameters_adhoc
         
-    def plot_fit(self, plot_style='detrend', around_coef=True, 
-                 simplify_ranges='start', figsize=(10,8)):
+    def plot_parameters(self, plot_style='detrend', around_coef=True, 
+                        simplify_ranges='start', figsize=(10,8)):
         """
     
         Plots for estimates from apc.Model.fit() with standard errors.
@@ -2233,8 +2234,8 @@ class Model:
         >>> model = apc.Model()
         >>> model.data_from_df(**apc.Belgian_lung_cancer())
         >>> model.fit('gaussian_rates', 'APC')
-        >>> model.plot_fit()
-        >>> model.plotted_fit
+        >>> model.plot_parameters()
+        >>> model.plotted_parameters
                 
         """
         fig, ax = plt.subplots(ncols=3, nrows=3, figsize=figsize)
@@ -2386,7 +2387,14 @@ class Model:
 
         fig.tight_layout()
 
-        self.plotted_fit = fig
+        self.plotted_parameters = fig
+        
+        import warnings
+        warnings.warn('From the next release, "plot_fit" and "plotted_fit" are going to be ' +
+                      'available exclusively as "plot_parameters" and "plotted_fit", respectively.',
+                      FutureWarning)
+        # removed in next version
+        self.plotted_fit = fig      
         
     def _get_fc_design(self, predictor):
         """
