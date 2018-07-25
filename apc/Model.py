@@ -2639,7 +2639,7 @@ class Model:
             quants = _get_quantiles(qs, method, lvl, se_total)
             table = pd.concat([
                 point_fc, se_total, se_proc, se_est, quants
-            ], axis=1).astype(object)
+            ], axis=1)
             return table
         
         fc_results = {}
