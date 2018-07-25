@@ -2419,22 +2419,20 @@ class Model:
         """
         Generate point forecasts.
         """
-        #if self.predictor != 'AC':
-        #    raise ValueError('Forecasting only implemented for "AC" predictor.')
-        
         fc_design = self._get_fc_design(self.predictor)
         fc_linpred = fc_design.dot(self.para_table['coef']).rename(
-            'linear predictor forecast')
+            'linear_predictor_forecast')
 
-        if self.family in ('poisson_response', 'log_normal_response', 
-                        'od_poisson_response'):
+        if self.family in ('poisson_response', 'od_poisson_response'):
             fc_point = np.exp(fc_linpred).rename('point_forecast')
+        elif self.family in ('log_normal_response', 'gen_log_normal_response'):
+            fc_point = np.exp(fc_linpred + self.s2/2).rename('point_forecast')
         elif self.family in ('gaussian_response'):
             fc_point = fc_linpred.rename('point_forecast')
         else:
             raise ValueError('Currently supports only "poisson_response", ' +
-                             '"log_normal_response", "od_poisson_response"' +
-                             ' and "gaussian_response"')
+                             '"log_normal_response", "gen_log_normal_response"' +
+                             ' "od_poisson_response" and "gaussian_response"')
 
         if attach_to_self:
             self._fc_design = fc_design
@@ -2442,7 +2440,6 @@ class Model:
             self._fc_point = fc_point
         else:
             return fc_point
-
 
     def forecast(self, quantiles=[0.75, 0.9, 0.95, 0.99], method=None, attach_to_self=True):
         """
@@ -2552,15 +2549,16 @@ class Model:
                     return pd.Series(df.sum(), index=['Total'], name=df.name)
 
         def _get_process_error(method, lvl):
-            fc_point = _agg(self._fc_point, lvl)
+            fc_point = self._fc_point
+            fc_linpred = self._fc_linpred
             if method == 'n_gauss':
                 pe_sq = pd.Series(self.s2, fc_point.index).rename('se_process')
             elif method == 'n_poisson':
-                pe_sq = fc_point.rename('se_process')
+                pe_sq = _agg(fc_point, lvl).rename('se_process')
             elif method == 't_odp':
-                pe_sq = fc_point.rename('se_process') * self.s2
+                pe_sq = _agg(fc_point, lvl).rename('se_process') * self.s2
             elif method == 't_gln':
-                pe_sq = fc_point.rename('se_process')**2 * self.s2
+                pe_sq = _agg(np.exp(fc_linpred)**2, lvl).rename('se_process') * self.s2
             return np.sqrt(pe_sq)
 
         def _get_estimation_error(method, lvl):
@@ -2584,13 +2582,12 @@ class Model:
                 s_A_2 = np.einsum('ip,ip->i', fc_pi_H_A.dot(i_xi2_inv*tau), fc_pi_H_A)
                 se_sq = pd.Series(s_A_2, fc_pi_H_A.index, name='se_estimation_xi2')
             elif method == 't_gln':
-                fc_point = self._fc_point
+                fc_linpred = self._fc_linpred
                 fc_X = self._fc_design
-                fctr_A = _agg((fc_point * fc_X.T).T, lvl)
+                fctr_A = _agg((np.exp(fc_linpred) * fc_X.T).T, lvl)
                 se_sq = pd.Series(
                     np.diag(fctr_A.dot(cov).dot(fctr_A.T)), 
                     fctr_A.index, name='se_estimation_xi')
-
             if method == 't_odp':
                 pi_A = _agg(fc_pi, lvl)
                 se_sq = pd.concat([
@@ -2598,7 +2595,6 @@ class Model:
                     pd.Series(pi_A**2 * tau * self.s2, 
                               pi_A.index, name='se_estimation_tau')
                 ], axis=1)
-
             return np.sqrt(se_sq)
 
         def _get_total_error(se_process, se_estimation):
@@ -2639,7 +2635,7 @@ class Model:
             self.forecasts = fc_results
         else:
             return fc_results
-
+    
     def clone(self):
         """
         Clone model with attached data but without fitting.
