@@ -36,6 +36,15 @@ class TestSimulate(unittest.TestCase):
             repetitions=10, fitted_values=model.fitted_values * 10)
         model.simulate(repetitions=10, sigma2=10)
 
+    def test_VNJ_gln(self):
+        model = apc.Model()
+        model.data_from_df(apc.loss_VNJ(), data_format='CL')
+        model.fit('gen_log_normal_response', 'APC')
+        model.simulate(repetitions=10)
+        model.simulate(
+            repetitions=10, fitted_values=model.fitted_values * 10)
+        model.simulate(repetitions=10, sigma2=10)
+        
     def test_Belgian_ln_rates(self):
         model = apc.Model()
         model.data_from_df(**apc.Belgian_lung_cancer())
