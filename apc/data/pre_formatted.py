@@ -322,3 +322,25 @@ def asbestos(sample='2007', balanced=True):
         asbestos.columns = asbestos.columns.astype(np.int64)
         
     return asbestos
+
+def loss_KN():
+    """
+    Loss data as pandas.DataFrame for use with Model().data_from_df(). 
+    
+    The data set is taken from Kuang and Nielsen (2018). The data are from the insurer
+    XL Group. Data are US casualty data organized in a run-off triangle containing
+    gross paid and reported loss and allocated loss adjustment expense in 1000 USD. 
+
+       
+    References
+    ----------
+    
+    Kuang, D., & Nielsen, B. (2018). Generalized Log-Normal Chain-Ladder. 
+    ArXiv E-Prints, 1806.05939. Available from http://arxiv.org/abs/1806.05939
+    
+    """
+    data = pd.read_csv(resource_filename('apc', 'data/xl_insurance.csv'), index_col=0)
+    data.index.name = 'Cohort'
+    data.columns.name = 'Age'
+    
+    return data      
