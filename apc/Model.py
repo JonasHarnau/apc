@@ -683,7 +683,7 @@ class Model:
         fitted_values : pandas.Series
                         Fitted values for the response.
         
-        para_table : pandas.DataFrame
+        parameters : pandas.DataFrame
                      Dataframe with four columns: coefficients, standard errors,
                      z-stats/t-stats (ratio of coefficients to standard errors) and 
                      p-values. 
@@ -1911,11 +1911,11 @@ class Model:
             # filter
             return [l for l in labels if filt in l]
 
-        para_table = self.para_table
-        estimates = para_table['coef']
-        std_err = para_table['std err']
-        index_labels = para_table.index    
-        column_labels = para_table.columns
+        parameters = self.parameters
+        estimates = parameters['coef']
+        std_err = parameters['std err']
+        index_labels = parameters.index    
+        column_labels = parameters.columns
         family = self.family
         predictor = self.predictor
 
@@ -1998,7 +1998,7 @@ class Model:
 
         if style == 'sum_sum':
             para_table_adhoc = pd.concat(
-                [para_table, A_rows, B_rows, C_rows], axis=0)
+                [parameters, A_rows, B_rows, C_rows], axis=0)
         elif style == 'detrend':    
             A_d_design = np.identity(I)
             A_d_design[:,0] += -1 + (np.arange(1,I+1) - 1)/(I-1)
@@ -2164,7 +2164,7 @@ class Model:
             
             para_table_adhoc = pd.concat(
                 [level_d_row, slope_age_d_row, slope_coh_d_row, 
-                 slope_per_d_row, para_table.loc[f(index_labels, 'dd_'), :],
+                 slope_per_d_row, parameters.loc[f(index_labels, 'dd_'), :],
                  A_d_rows, B_d_rows, C_d_rows], axis=0)
         else:
             raise ValueError('style must be "sum_sum" or "detrend".')
@@ -2423,7 +2423,7 @@ class Model:
         Generate point forecasts.
         """
         fc_design = self._get_fc_design(self.predictor)
-        fc_linpred = fc_design.dot(self.para_table['coef']).rename(
+        fc_linpred = fc_design.dot(self.parameters['coef']).rename(
             'linear_predictor_forecast')
 
         if self.family in ('poisson_response', 'od_poisson_response'):
