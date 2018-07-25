@@ -116,7 +116,7 @@ def r_test(response, family_null, predictor = 'APC',
     Z = np.log(model.data_vector)
     
     model.fit('log_normal_response', predictor)
-    RSS = model.RSS
+    RSS = model.rss
     tau_ls = model.fitted_values.sum()
     sqrt_Pi_ls = np.diag(np.sqrt(model.fitted_values/tau_ls))
     X = model.design
