@@ -805,7 +805,7 @@ class Model:
         if not family in ('binomial_dose_response', 'poisson_response', 
                           'poisson_dose_response'):
             s2 = fit.deviance / df_resid
-        if family in ('gaussian_rates', 'gaussian_respoonse', 
+        if family in ('gaussian_rates', 'gaussian_response', 
                       'log_normal_rates', 'log_normal_response', 'gen_log_normal_response'):
             rss = fit.deviance
             sigma2 = rss / self.n
