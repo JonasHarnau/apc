@@ -2475,8 +2475,7 @@ class Model:
         
         Generates point and closed form distribution forecasts by cell, age, period and cohort
         as well as for the total forecast array. Currently supports forecasting for future 
-        periods in 'poisson_response' and 'od_poisson_response' models without parameter 
-        extrapolation.
+        periods in response only models without parameter extrapolation.
                 
         Parameters
         ----------
@@ -2485,11 +2484,14 @@ class Model:
                     The quantiles for which the distribution forecast should be computed. 
                     (Default is [0.75, 0.9, 0.95, 0.99].)
         
-        method : {'n_poisson', 't_odp'}, optional
-                 Determines the forecasting method. 'n_poisson' is appropriate for 
+        method : {'n_gauss', 'n_poisson', 't_odp', 't_gln'}, optional
+                 Determines the forecasting method. 'n_gauss' uses standard Gaussian theory 
+                 and is appropriate for 'gaussian_response'. 'n_poisson' is appropriate for 
                  'poisson_response' models and uses the theory in Martinez Miranda (2015).
                  't_odp' is appropriate for 'od_poisson_response' and uses the theory from
-                 Harnau and Nielsen (2017). (Default uses best choice for the model.)
+                 Harnau and Nielsen (2017). 't_gln' is appropriate for 'log_normal_response' 
+                 and 'gen_log_normal_response' and uses the theory from Kuang and Nielsen 
+                 (2018). (Default uses best choice for the model.)
         
         attach_to_self : bool, optional
                          If this is True the results are attached to self.forecasts. If False
@@ -2503,6 +2505,13 @@ class Model:
         and 'method'. Attached to self.forecasts if 'attach_to_self' is True and returned 
         otherwise. The DataFrames contain point forecasts, standard errors broken down into 
         process and estimation error, and quantiles of the forecast distribution.
+        
+        
+        See also
+        --------
+        
+        Vignettes in apc/vignettes/vignette_mesothelioma.ipynb and
+        apc/vignettes/vignette_over_dispersed_apc.ipynb.
         
         
         Raises
@@ -2519,13 +2528,28 @@ class Model:
         age-period-cohort and extended chain ladder models. To appear in Journal
         of the American Statistical Association.
         
+        Kuang, D., & Nielsen, B. (2018). Generalized Log-Normal Chain-Ladder.
+        ArXiv E-Prints, 1806.05939. Available from http://arxiv.org/abs/1806.05939
+        
         Martinez Miranda, M.D., Nielsen, B. and Nielsen, J.P. (2015) Inference 
         and forecasting in the age-period-cohort model with unknown exposure 
         with an application to mesothelioma mortality. Journal of the Royal 
-        Statistical Society A 178, 29-55.        
-            
-        """
+        Statistical Society A 178, 29-55.     
         
+        Examples
+        --------
+        
+        >>> model = apc.Model()
+        >>> model.data_from_df(apc.loss_TA(), data_format='CL')
+        >>> model.fit('od_poisson_response', 'AC')
+        >>> model.forecast()
+        
+        >>> model = apc.Model()
+        >>> model.data_from_df(apc.asbestos(), data_format='PA')
+        >>> model.fit('poisson_response', 'AC')
+        >>> model.forecast()
+        
+        """
         if method is None:
             family = self.family
             if family == 'gaussian_response':
