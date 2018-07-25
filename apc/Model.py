@@ -1852,7 +1852,7 @@ class Model:
         
         attach_to_self: bool (optional)
                         Default True. If this is True the output 
-                        is attached to self.para_table_adhoc. If False the
+                        is attached to self.parameters_adhoc. If False the
                         table is returned.
                         
                 
@@ -1860,7 +1860,7 @@ class Model:
         -------
         
         pandas.DataFrame
-        Either attached to self.para_table_adhoc or returned.
+        Either attached to self.parameters_adhoc or returned.
         
         The dataframe has the following four columns.
         
@@ -1888,7 +1888,7 @@ class Model:
         >>> model.data_from_df(**apc.Belgian_lung_cancer())
         >>> model.fit('gaussian_rates', 'APC')
         >>> model.identify()
-        >>> model.para_table_adhoc
+        >>> model.parameters_adhoc
         
         
         Notes
@@ -1997,7 +1997,7 @@ class Model:
         C_rows.columns = column_labels
 
         if style == 'sum_sum':
-            para_table_adhoc = pd.concat(
+            parameters_adhoc = pd.concat(
                 [parameters, A_rows, B_rows, C_rows], axis=0)
         elif style == 'detrend':    
             A_d_design = np.identity(I)
@@ -2162,18 +2162,23 @@ class Model:
             B_d_rows.columns = column_labels
             C_d_rows.columns = column_labels
             
-            para_table_adhoc = pd.concat(
+            parameters_adhoc = pd.concat(
                 [level_d_row, slope_age_d_row, slope_coh_d_row, 
                  slope_per_d_row, parameters.loc[f(index_labels, 'dd_'), :],
                  A_d_rows, B_d_rows, C_d_rows], axis=0)
         else:
             raise ValueError('style must be "sum_sum" or "detrend".')
-        para_table_adhoc.dropna(how='all', inplace=True)
+        parameters_adhoc.dropna(how='all', inplace=True)
         
         if attach_to_self:
-            self.para_table_adhoc = para_table_adhoc
+            self.parameters_adhoc = parameters_adhoc
+            import warnings
+            warnings.warn('From the next release, attribute "para_table_adhoc" is going to be ' +
+                          'available only as "parameters_adhoc"', FutureWarning)
+            # removed in next version
+            self.para_table_adhoc = parameters_adhoc
         else:
-            return para_table_adhoc
+            return parameters_adhoc
         
     def plot_fit(self, plot_style='detrend', around_coef=True, 
                  simplify_ranges='start', figsize=(10,8)):
@@ -2268,12 +2273,12 @@ class Model:
         I, J, K, L = self.I, self.J, self.K, self.L
         predictor = self.predictor
 
-        para_table_adhoc = self.identify(plot_style, attach_to_self=False)
+        parameters_adhoc = self.identify(plot_style, attach_to_self=False)
 
-        get_coefs = lambda x: para_table_adhoc.loc[
-            f(para_table_adhoc.index, x), 'coef'] 
-        get_stderr = lambda x: para_table_adhoc.loc[
-            f(para_table_adhoc.index, x), 'std err'] 
+        get_coefs = lambda x: parameters_adhoc.loc[
+            f(parameters_adhoc.index, x), 'coef'] 
+        get_stderr = lambda x: parameters_adhoc.loc[
+            f(parameters_adhoc.index, x), 'std err'] 
 
         def get_xticklabels(series, simplify_to):
             try:
