@@ -1913,7 +1913,7 @@ class Model:
 
         parameters = self.parameters
         estimates = parameters['coef']
-        std_err = parameters['std err']
+        std_err = parameters['std_err']
         index_labels = parameters.index    
         column_labels = parameters.columns
         family = self.family
@@ -2278,7 +2278,7 @@ class Model:
         get_coefs = lambda x: parameters_adhoc.loc[
             f(parameters_adhoc.index, x), 'coef'] 
         get_stderr = lambda x: parameters_adhoc.loc[
-            f(parameters_adhoc.index, x), 'std err'] 
+            f(parameters_adhoc.index, x), 'std_err'] 
 
         def get_xticklabels(series, simplify_to):
             try:
