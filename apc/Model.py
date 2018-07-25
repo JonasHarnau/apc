@@ -1576,6 +1576,12 @@ class Model:
         Model().fitted_values. The draws are in the columns. 
         
         
+        Notes
+        -----
+        
+        Generalized log-normal simulations use a log-normal data generating process.
+        
+        
         Examples
         --------
         
@@ -1657,7 +1663,7 @@ class Model:
                 means = fitted_values
                 sigma = np.sqrt(sigma2)
                 draws = np.random.normal(means, sigma, size=(repetitions, n))
-            elif family in ('log_normal_response', 'log_normal_rates'):
+            elif family in ('log_normal_response', 'log_normal_rates', 'gen_log_normal_response'):
                 lin_pred = np.log(fitted_values)
                 sigma = np.sqrt(sigma2)
                 draws = np.random.lognormal(lin_pred, sigma, size=(repetitions, n))
