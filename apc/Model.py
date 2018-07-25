@@ -2569,7 +2569,7 @@ class Model:
             if lvl == 'Cell':
                 return df
             elif lvl in ('Age', 'Period', 'Cohort'):
-                return df.sum(level=lvl)
+                return df.sum(level=lvl).sort_index()
             else:
                 try:
                     return pd.DataFrame(df.sum(), columns=['Total']).T
