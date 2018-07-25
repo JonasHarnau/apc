@@ -820,10 +820,6 @@ class Model:
             p_values.rename('P>|z|', inplace = True)            
         else:         
             # Adjust covariance matrix
-            c22 = cov_canonical.iloc[1:xi_dim,1:xi_dim]
-            c21 = cov_canonical.iloc[1:xi_dim,0]
-            c11 = cov_canonical.iloc[0,0]
-            cov_canonical.iloc[1:xi_dim,1:xi_dim] = c22 - np.outer(c21,c21)/c11
             cov_canonical.iloc[0,:] = 0
             cov_canonical.iloc[:,0] = 0
             
