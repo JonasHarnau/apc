@@ -1,268 +1,130 @@
 # apc
 
-This package is for age-period-cohort analysis. 
-It is very much inspired by the R package of the same name. 
-The package covers binomial, log-normal, normal, over-dispersed Poisson and Poisson models. 
+This package is for age-period-cohort and extended chain-ladder analysis. It allows for model estimation and inference, visualization, misspecification testing, distribution forecasting and simulation.
+The package covers binomial, (generalized) log-normal, normal, over-dispersed Poisson and Poisson models. 
 The common factor is a linear age-period-cohort predictor. 
 The package uses the identification method by Kuang et al. (2008) implemented as described
-by Nielsen (2015) who also discusses the use of the R package of the same name.
+by Nielsen (2015) who also discusses the use of the R package ``apc`` which inspired this package.
 
 ## Latest changes
 
-Version 0.3.0 substantially expands the functionality of Version 0.2.0. 
-* Parameter plots with standard errors
-* Simulations based on estimated model
-* Creating sub-samples and models based on those
-* Bartlett and F-tests for misspecification
-* Non-nested testing between log-normal and over-dispersed Poisson
+Version 1.0.0 adds a number of new features. Among them are
 
-
-Version 0.2.0 is a complete rethink of the package. It introduces the ``Model`` Class as
-the primary object of interest. This has now been expanded to match the functionality of 
-the last version 0.1.0. As such, 0.2.0 is unfortunately **not** downward compatible!
+* Vignettes to to replicate papers (start with those!)
+* Distribution forecasting
+* Misspecification tests
+* More plotting
+* Simulating from an estimated model
+* Sub-sampling
 
 ## Usage
 
-1. Specify a model: ``model = Model()``
-2. Attach the data: ``model.data_from_df(pandas.DataFrame)``
-3. Plot data sums: ``model.plot_data_sums()``
-4. Plot data heatmaps: ``model.plot_data_heatmaps()``
-5. Plot data groups of one time-scale across another: ``model.plot_data_within()``
-5. Fit the model: ``model.fit(family, predictor)``
-6. Fit a deviance table to check for valid reductions: ``model.fit_table()``
+1. import package: ``import apc``
+2. Set up a model: ``model = apc.Model()``
+3. Attach and format the data: ``model.data_from_df(pandas.DataFrame)``
+4. Plot data
+  *  Plot data sums: ``model.plot_data_sums()``
+  * Plot data heatmaps: ``model.plot_data_heatmaps()``
+  * Plot data groups of one time-scale across another: ``model.plot_data_within()``
+5. Fit and evaluate the model
+  *  Fit a model: ``model.fit(family, predictor)``
+  *  Generate ad-hoc identified parameterizations: ``model.identify()``
+  *  Plot parameter estimates: ``model.plot_fit()``
+  *  Fit a deviance table to check for valid reductions: ``model.fit_table()``
+6. Test model for misspecification
+  *  $R$ test (generalized) log-normal against over-dispersed Poisson: ``apc.r_test(pandas.DataFrame, family_null, predictor)``
+  *  Split into sub-models: ``model.sub_model(age_from_to, per_from_to, coh_from_to)``
+  *  Bartlett test: ``apc.bartlett_test(sub_models)``
+  *  $F$ test: ``apc.f_test(model, sub_models)``
+7. Form distribution forecasts: ``model.get_dist_fc()``
+8. Plot distribution forecasts: ``model.plot_forecast()``
+8. Simulate from the model: ``model.simulate(repetitions)``
 
+## Vignettes 
 
-We can now also simulate the model: ``model.simulate(repetitions)``
+The package includes vignettes that replicate the empirical applications of a number of papers. 
 
+* [Replicate Harnau and Nielsen (2017)](apc/vignettes/vignette_over_dispersed_apc.ipynb)
+   *  Non-Life Insurance Claim Reserving
+   *  Over-dispersed Poisson deviance analysis, parameter uncertainty, and distribution forecasting
+* [Replicate Harnau (2018a)](apc/vignettes/vignette_misspecification.ipynb) 
+  *  Non-Life Insurance Claim Reserving
+  *  Testing specification of log-normal or over-dispersed Poisson models with Bartlett and $F$ tests
+* [Replicate Harnau (2018b)](apc/vignettes/vignette_ln_vs_odp.ipynb)
+  *  Non-Life Insurance Claim Reserving
+  *  Direct testing between over-dispersed Poisson and (generalized) log-normal models
+* [(Loosely) Replicate Martinez Miranda et al. (2015)](apc/vignettes/vignette_mesothelioma.ipynb) 
+  *  Mesothelioma Mortality Forecasting
+  *  Data plotting, Poisson deviance analysis, parameter uncertainty, residual plots, and distribution forecasting including plots
+* [Replicate Kuang and Nielsen (2018)](apc/vignettes/vignette_generalized_log_normal.ipynb) 
+  *  Non-Life Insurance Claim Reserving
+  *  Estimating, testing and forecasting in generalized log-normal models. Comparison to over-dispersed Poisson modeling.
+* [Replicate Nielsen (2014)](apc/vignettes/vignette_deviance_analysis.ipynb) 
+  *  Analysis of Belgian lung cancer data
+  *  Estimating, testing and plotting in poisson-dose-response models. Testing for non-standard restrictions. Brief discussion of identification.
 
-## Example
-
-As an example, following the scheme described above we can do the following. 
-
-First we load some data and set-up the Model object.
-```
-import pandas as pd
-data = pd.read_excel('./apc/data/Belgian_lung_cancer.xlsx', 
-                     sheetname = ['response', 'rates'], index_col = 0)
-from apc.Model import Model
-model = Model()
-```
-
-We have a look at the data. This is in age-period space.
-```
-print(data['response'])
-
-       1955-1959  1960-1964  1965-1969  1970-1974
-                                                 
-25-29          3          2          7          3
-30-34         11         16         11         10
-35-39         11         22         24         25
-40-44         36         44         42         53
-45-49         77         74         68         99
-50-54        106        131         99        142
-55-59        157        184        189        180
-60-64        193        232        262        249
-65-69        219        267        323        325
-70-74        223        250        308        412
-75-79        198        214        253        338
-```
-
-
-We can now attach the data to the model. 
-```
-model.data_from_df(data['response'], rate=data['rates'], data_format='AP')
-```
-This computes some checks and reformats it into a long format with a multi-index
-that can more easily be used later on. The missing third index, cohort in this case,
-is computed automatically. We can have a look at the output.
-```
-print(model.data_vector.head())
-
-                           response       dose  rate
-Period    Age   Cohort                              
-1955-1959 25-29 1926-1934         3  15.789474  0.19
-          30-34 1921-1929        11  16.666667  0.66
-          35-39 1916-1924        11  14.102564  0.78
-          40-44 1911-1919        36  13.483146  2.67
-          45-49 1906-1914        77  15.909091  4.84
-```
-Note that the model is capable of generating cohort labels that reflect the correct range.
-For instance, an individual who is 25-29 in 1955-1959 was born between 1926 and 1934.
-
-We can move on to plot the data sums
-```
-model.plot_data_sums()
-
-model.plotted_data_sums
-```
-![data_sum_plot](https://user-images.githubusercontent.com/25103918/31182586-458c3aa6-a8f2-11e7-8953-8b8f036a99a3.png)
-
-This function includes functionality to transform index ranges into integer indices to 
-allow for prettier axis labels. We can choose to transform to start, mean, or end of the 
-range, or to keep the range labels.
-
-Another plot we can make is a heatmap.
-```
-model.plot_data_heatmaps(simplify_ranges=False)
-
-model.plotted_data_heatmaps
-```
-![data_heatmap_plot](https://user-images.githubusercontent.com/25103918/31187946-63e16800-a901-11e7-8541-26831a80a2ad.png)
-
-We can also easily change the plotting space. For instance, if we prefer to plot in 
-age-cohort rather than age-period space we can do this like this.
-```
-model.plot_data_heatmaps(space='AC')
-
-model.plotted_data_heatmaps
-```
-![data_heatmap_plot_AC_space](https://user-images.githubusercontent.com/25103918/31188021-9d56d9da-a901-11e7-9f1a-7d417a33ca12.png)
-
-
-Another way to look at the data is to plot groups of one time-scale across another. 
-```
-model.plot_data_within(figsize=(10,6))
-
-model.plotted_data_within['response']
-```
-![data_within_plot](https://user-images.githubusercontent.com/25103918/31203174-e7cd68b2-a933-11e7-8ac0-4615404d1581.png)
-
-
-
-
-Next, we can fit a model to the data. For example, a log-normal model for the rates
-with an age-period-cohort predictor is fit like this
-
-```
-model.fit('log_normal_rates', 'APC')
-```
-
-We can then, for example, look at the estimated coefficients.
-```
-print(model.para_table)
-
-                      coef   std err          z         P>|z|
-level             1.930087  0.171428  11.258910  2.093311e-29
-slope_age         0.536182  0.195753   2.739070  6.161319e-03
-slope_coh         0.187146  0.195788   0.955857  3.391443e-01
-dd_age_35-39     -0.574042  0.291498  -1.969284  4.892050e-02
-dd_age_40-44      0.202367  0.286888   0.705389  4.805682e-01
-dd_age_45-49     -0.171580  0.285231  -0.601548  5.474753e-01
-dd_age_50-54     -0.200673  0.284958  -0.704219  4.812966e-01
-dd_age_55-59     -0.059358  0.284947  -0.208314  8.349839e-01
-dd_age_60-64     -0.076937  0.284958  -0.269994  7.871649e-01
-dd_age_65-69      0.027525  0.285231   0.096499  9.231242e-01
-dd_age_70-74     -0.067239  0.286888  -0.234375  8.146940e-01
-dd_age_75-79     -0.081487  0.291498  -0.279546  7.798256e-01
-dd_per_1965-1969 -0.088476  0.171182  -0.516855  6.052575e-01
-dd_per_1970-1974 -0.014666  0.171182  -0.085677  9.317229e-01
-dd_coh_1886-1894  0.101196  0.430449   0.235094  8.141360e-01
-dd_coh_1891-1899  0.044626  0.335289   0.133098  8.941163e-01
-dd_coh_1896-1904 -0.030893  0.291071  -0.106137  9.154736e-01
-dd_coh_1901-1909 -0.064800  0.285233  -0.227184  8.202810e-01
-dd_coh_1906-1914  0.087591  0.285009   0.307328  7.585934e-01
-dd_coh_1911-1919 -0.020926  0.284956  -0.073438  9.414579e-01
-dd_coh_1916-1924 -0.078598  0.284956  -0.275826  7.826816e-01
-dd_coh_1921-1929  0.126880  0.285009   0.445181  6.561890e-01
-dd_coh_1926-1934  0.085676  0.285233   0.300371  7.638939e-01
-dd_coh_1931-1939 -0.400922  0.291071  -1.377401  1.683882e-01
-dd_coh_1936-1944  0.732671  0.335289   2.185191  2.887488e-02
-dd_coh_1941-1949 -1.053534  0.430449  -2.447520  1.438430e-02
-```
-
-We can check if there are valid reductions from the APC predictor by evaluating 
-a deviance table.
-```
-model.fit_table()
-```
-We inspect the results 
-```
-print(model.deviance_table)
-
-         -2logL  df_resid   LR_vs_APC  df_vs_APC      P>chi_sq         aic
-APC  -44.854193        18         NaN        NaN           NaN    7.145807
-AP   -28.997804        30   15.856389       12.0  1.979026e-01   -0.997804
-AC   -43.453528        20    1.400664        2.0  4.964203e-01    4.546472
-PC    12.631392        27   57.485584        9.0  4.079167e-09   46.631392
-Ad   -28.042198        32   16.811994       14.0  2.663353e-01   -4.042198
-Pd    47.605631        39   92.459824       21.0  6.054524e-11   57.605631
-Cd    12.710530        29   57.564723       11.0  2.618204e-08   42.710530
-A    -14.916745        33   29.937447       15.0  1.214906e-02    7.083255
-P    165.610725        40  210.464918       22.0  0.000000e+00  173.610725
-C     88.261366        30  133.115559       12.0  0.000000e+00  116.261366
-t     47.774702        41   92.628894       23.0  2.562911e-10   53.774702
-tA    50.423353        42   95.277546       24.0  1.896069e-10   54.423353
-tP   165.622315        42  210.476508       24.0  0.000000e+00  169.622315
-tC    98.099334        42  142.953526       24.0  0.000000e+00  102.099334
-1    165.809402        43  210.663595       25.0  0.000000e+00  167.809402
-```
-We can see that for example an age-cohort model (``AC``) seems to be a valid reduction.
-A likelihood ratio test yields a p-value of close to 0.5. 
-We can check for further reductions from the age-cohort model.
-```
-dev_table_AC = model.fit_table(reference_predictor='AC', attach_to_self=False)
-
-print(dev_table_AC)
-
-        -2logL  df_resid    LR_vs_AC  df_vs_AC      P>chi_sq         aic
-AC  -43.453528        20         NaN       NaN           NaN    4.546472
-Ad  -28.042198        32   15.411330      12.0  2.197089e-01   -4.042198
-Cd   12.710530        29   56.164058       9.0  7.302826e-09   42.710530
-A   -14.916745        33   28.536783      13.0  7.610743e-03    7.083255
-C    88.261366        30  131.714894      10.0  0.000000e+00  116.261366
-t    47.774702        41   91.228230      21.0  9.899548e-11   53.774702
-tA   50.423353        42   93.876881      22.0  7.438616e-11   54.423353
-tC   98.099334        42  141.552862      22.0  0.000000e+00  102.099334
-1   165.809402        43  209.262930      23.0  0.000000e+00  167.809402
-```
-We could now consider a further reduction to an age-drift model (``Ad``) with a p-value of 0.22.
-
-    
 ## Included Data
 
-The following data examples are included in the package at this time. 
+The following data are included in the package. 
+
+### Asbestos
+
+These data are for counts of mesothelioma deaths in the UK in age-period space. They may be modeled with a Poisson model with "APC" or "AC" predictor. The data can be loaded by calling ``apc.asbestos()``.
+
+_Source: Martinez Miranda et al. (2015)_
 
 ### Belgian Lung Cancer 
 
-This data-set is currently provided in an excel spreadsheet.
-It includes counts of deaths from lung cancer in the Belgium. 
+These data includes counts of deaths from lung cancer in Belgium in age-period space. 
 This dataset includes a measure for exposure. It can be analysed using a Poisson model 
-with an “APC”, “AC”, “AP” or “Ad” predictor. 
+with an “APC”, “AC”, “AP” or “Ad” predictor. The data can be loaded by calling ``apc.Belgian_lung_cancer()``.
 
-_Source: Clayton and Schifflers (1987)_.
+_Source: Clayton and Schifflers (1987)_
 
-### Loss TA 
+### Run-off triangle by Barnett and Zehnwirth (2000)
 
-Data for an insurance run-off triangle. This data is pre-formatted.
-May be modeled with an over-dispersed Poisson model,
-for instance with ``AC`` predictor. 
+Data for an insurance run-off triangle in cohort-age (accident-development year) space. This data is pre-formatted. These data are well known to require a period/calendar effect for modeling. They may be modeled with an over-dispersed Poisson "APC" predictor. The data can be loaded by calling ``apc.loss_BZ()``.
+
+_Source: Barnett and Zehnwirth (2000)_
+
+
+### Run-off triangle by Taylor and Ashe (1983)
+
+Data for an insurance run-off triangle in cohort-age (accident-development year) space. This data is pre-formatted.
+May be modeled with an over-dispersed Poisson model, for instance with "AC" predictor. The data can be loaded by calling ``apc.loss_TA()``.
 
 _Source: Taylor and Ashe (1983)_
 
-### Loss VNJ
+### Run-off triangle by Verrall et al. (2010)
 
-Data for insurance run-off triangle of paid amounts (units not reported). 
+Data for insurance run-off triangle of paid amounts (units not reported) in cohort-age (accident-development year) space. 
 Data from Codan, Danish subsiduary of Royal & Sun Alliance. 
 It is a portfolio of third party liability from motor policies. The time units are in years. 
-Apart from the paid amounts, counts for the number of reported claims are available. 
+Apart from the paid amounts, counts for the number of reported claims are available. The paid amounts may be modeled with an over-dispersed Poisson model with "APC" predictor. The data can be loaded by calling ``apc.loss_VNJ()``.
 
-_Source: Verrall et al. (2010)._
+_Source: Verrall et al. (2010)_
 
+### Run-off triangle by Kuang and Nielsen (2018)
+
+These US casualty data are from the insurer XL Group. Entries are gross paid and reported loss and allocated loss adjustment expense in 1000 USD. Kuang and Nielsen (2018) consider a generalized log-normal model with "AC" predictor for these data. The data can be loaded by calling ``apc.loss_KN()``.
+ 
 ## Known Issues
 
-* Index-ranges, such as _1955-1959_ in ``data_vector`` as output by ``Model().data_as_df()``
-are strings. Thus, sorting may yield unintuitive results for breaks in length of the range
-components. For example, sorting 1-3, 4-9, 10-11 yields the ordering 1-3, 10-11, 4-9. 
-This results in mis-labeling of the coefficient names later on since those are taken from
-sorted indices. A possible, if ugly, fix could be to pad the ranges with zeros as needed. 
-* When calling ``import apc`` there may be a deprecation warning raised by ``pandas``. 
-This is the result of importing ``statsmodels`` and will hopefully be resolved with its next release. 
+* Index-ranges such as _1955-1959_ don't work with forecasting if the initial ``data_format`` was not CA or AC. The problem is that the forecasting design is generated by first casting the data into an AC array from which the future period index is generated.
+* Index-ranges, such as _1955-1959_ in ``data_vector`` as output by ``Model().data_as_df()`` are strings. Thus, sorting may yield unintuitive results for breaks in length of the range components. For example, sorting 1-3, 4-9, 10-11 yields the ordering 1-3, 10-11, 4-9. This results in mis-labeling of the coefficient names later on since those are taken from sorted indices. A possible, if ugly, fix could be to pad the ranges with zeros as needed.
+
 
 ## References
 
-* Clayton, D. and Schifflers, E. (1987) Models for temperoral variation in cancer rates. I: age-period and age-cohort models. Statistics in Medicine 6, 449-467.
-* Kuang, D., Nielsen, B. and Nielsen, J.P. (2008) Identification of the age-period-cohort model and the extended chain ladder model. Biometrika 95, 979-986.
-* Nielsen, B. (2015) apc: An R package for age-period-cohort analysis. R Journal 7, 52-64. _Download:_ [Open Access](https://journal.r-project.org/archive/2015-2/nielsen.pdf).
-* Taylor, G.C., Ashe, F.R. (1983) Second moments of estimates of outstanding claims Journal of Econometrics 23, 37-61
-* Verrall R, Nielsen JP, Jessen AH (2010) Prediction of RBNS and IBNR claims using claim amounts and claim counts ASTIN Bulletin 40, 871-887
-
+* Barnett, G., & Zehnwirth, B. (2000). Best estimates for reserves. *Proceedings of the Casualty Actuarial Society*, 87(167), 245–321.
+* Clayton, D. and Schifflers, E. (1987). Models for temperoral variation in cancer rates. I: age-period and age-cohort models. *Statistics in Medicine* 6, 449-467.
+* Harnau, J., & Nielsen, B. (2017). Over-dispersed age-period-cohort models. *Journal of the American Statistical Association*. [Available online](https://doi.org/10.1080/01621459.2017.1366908)
+* Harnau, J. (2018a). Misspecification Tests for Log-Normal and Over-Dispersed Poisson Chain-Ladder Models. *Risks*, 6(2), 25. [Open Access](https://doi.org/10.3390/RISKS6020025)
+* Harnau, J. (2018b). Log-Normal or Over-Dispersed Poisson? *Risks*, 6(3), 70. [Open Access](https://doi.org/10.3390/RISKS6030070)
+* Kuang, D., Nielsen, B., & Nielsen, J. P. (2008). Identification of the age-period-cohort model and the extended chain-ladder model. *Biometrika*, 95(4), 979–986. [Open Access](https://doi.org/10.1093/biomet/asn026)
+* Kuang, D., & Nielsen, B. (2018). Generalized Log-Normal Chain-Ladder. *ArXiv E-Prints*, 1806.05939. [Download](http://arxiv.org/abs/1806.05939)
+* Nielsen, B. (2014). Deviance analysis of age-period-cohort models. *Nuffield Discussion Paper*, (W03). [Download](http://www.nuffield.ox.ac.uk/economics/papers/2014/apc_deviance.pdf)
+* Nielsen, B. (2015). apc: An R package for age-period-cohort analysis. *R Journal* 7, 52-64. [Open Access](https://journal.r-project.org/archive/2015-2/nielsen.pdf).
+* Martínez Miranda, M. D., Nielsen, B., & Nielsen, J. P. (2015). Inference and forecasting in the age-period-cohort model with unknown exposure with an application to mesothelioma mortality. *Journal of the Royal Statistical Society: Series A (Statistics in Society)*, 178(1), 29–55.
+* Taylor, G.C., Ashe, F.R. (1983). Second moments of estimates of outstanding claims. *Journal of Econometrics* 23, 37-61
+* Verrall R, Nielsen JP, Jessen AH (2010). Prediction of RBNS and IBNR claims using claim amounts and claim counts. *ASTIN Bulletin* 40, 871-887
