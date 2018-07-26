@@ -1,8 +1,8 @@
 from setuptools import setup
 
 setup(name='apc',
-      version='0.3.0',
-      description='Age-Period-Cohort Analysis',
+      version='1.0.0',
+      description='Age-Period-Cohort and extended Chain-Ladder Analysis',
       url='http://github.com/JonasHarnau/apc',
       author='Jonas Harnau',
       author_email='j.harnau@outlook.com',
