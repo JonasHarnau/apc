@@ -560,7 +560,7 @@ class Model:
         
         return design
         
-    def fit(self, family, predictor, design_components=None, attach_to_self=True):
+    def fit(self, family, predictor, design_components=None, R=None, attach_to_self=True):
         """
         Fits an age-period-cohort model to the data from Model().data_from_df().
     
@@ -655,6 +655,19 @@ class Model:
                      "1"
                          Constant model. Nested in "tA", "tP", "tC".
         
+        R : pandas.DataFrame, optional
+            Restriction on the design matrix implicitly specified by 'predictor'. Internally calls
+            design = design.dot(R). Thus, R has to have as many rows as Model.design. Only intended
+            to be used with Model.fit. Use breaks many other functions. Then, further analysis such 
+            as parameter plots, would have to be done by hand.
+        
+        design_components : pandas.DataFrame, optional
+                            Output of Model()._get_design_components(). Can speed up computations 
+                            if 'fit' is called repeatedly. If not provided computed internally.
+                            
+        attach_to_self : bool, optional
+                         Default True. If this is True the results are attached self.If False 
+                         the results are returned as a dictionary. (Default is True.)
                          
         Returns
         -------
@@ -750,6 +763,18 @@ class Model:
         Nielsen, B. (2015) apc: An R package for age-period-cohort analysis. 
         R Journal 7, 52-64.
         
+        
+        Examples
+        --------
+        
+        >>> model = apc.Model()
+        >>> model.data_from_df(**apc.Belgian_lung_cancer())
+        >>> model.fit('poisson_dose_response', 'Ad')
+        
+        >>> model = apc.Model()
+        >>> model.data_from_df(apc.loss_TA(), data_format='CL')
+        >>> model.fit('od_poisson_response', 'AC')
+        
         """
         
         ## Model family
@@ -769,7 +794,9 @@ class Model:
             
         # Get the design matrix
         design = self._get_design(predictor, design_components)
-        
+        if R is not None:
+            design = design.dot(R)
+            
         # Get the data
         response = self.data_vector['response']        
         if family is 'binomial_dose_response':
