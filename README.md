@@ -28,15 +28,16 @@ Version 1.0.0 adds a number of new features. Among them are
   * Plot data groups of one time-scale across another: ``model.plot_data_within()``
 5. Fit and evaluate the model
   *  Fit a model: ``model.fit(family, predictor)``
+  *  Plot residuals: ``model.plot_residuals()``
   *  Generate ad-hoc identified parameterizations: ``model.identify()``
-  *  Plot parameter estimates: ``model.plot_fit()``
+  *  Plot parameter estimates: ``model.plot_parameters()``
   *  Fit a deviance table to check for valid reductions: ``model.fit_table()``
 6. Test model for misspecification
   *  R test (generalized) log-normal against over-dispersed Poisson: ``apc.r_test(pandas.DataFrame, family_null, predictor)``
   *  Split into sub-models: ``model.sub_model(age_from_to, per_from_to, coh_from_to)``
   *  Bartlett test: ``apc.bartlett_test(sub_models)``
   *  F test: ``apc.f_test(model, sub_models)``
-7. Form distribution forecasts: ``model.get_dist_fc()``
+7. Form distribution forecasts: ``model.forecast()``
 8. Plot distribution forecasts: ``model.plot_forecast()``
 8. Simulate from the model: ``model.simulate(repetitions)``
 
