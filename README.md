@@ -45,22 +45,22 @@ Version 1.0.0 adds a number of new features. Among them are
 
 The package includes vignettes that replicate the empirical applications of a number of papers. 
 
-* [Replicate Harnau and Nielsen (2017)](apc/vignettes/vignette_over_dispersed_apc.ipynb)
+* [Replicate Harnau and Nielsen (2017)](https://github.com/JonasHarnau/apc/blob/master/apc/vignettes/vignette_over_dispersed_apc.ipynb)
    *  Non-Life Insurance Claim Reserving
    *  Over-dispersed Poisson deviance analysis, parameter uncertainty, and distribution forecasting
-* [Replicate Harnau (2018a)](apc/vignettes/vignette_misspecification.ipynb) 
+* [Replicate Harnau (2018a)](https://github.com/JonasHarnau/apc/blob/master/apc/vignettes/vignette_misspecification.ipynb) 
   *  Non-Life Insurance Claim Reserving
   *  Testing specification of log-normal or over-dispersed Poisson models with Bartlett and F tests
-* [Replicate Harnau (2018b)](apc/vignettes/vignette_ln_vs_odp.ipynb)
+* [Replicate Harnau (2018b)](https://github.com/JonasHarnau/apc/blob/master/apc/vignettes/vignette_ln_vs_odp.ipynb)
   *  Non-Life Insurance Claim Reserving
   *  Direct testing between over-dispersed Poisson and (generalized) log-normal models
-* [(Loosely) Replicate Martinez Miranda et al. (2015)](apc/vignettes/vignette_mesothelioma.ipynb) 
+* [(Loosely) Replicate Martinez Miranda et al. (2015)](https://github.com/JonasHarnau/apc/blob/master/apc/vignettes/vignette_mesothelioma.ipynb) 
   *  Mesothelioma Mortality Forecasting
   *  Data plotting, Poisson deviance analysis, parameter uncertainty, residual plots, and distribution forecasting including plots
-* [Replicate Kuang and Nielsen (2018)](apc/vignettes/vignette_generalized_log_normal.ipynb) 
+* [Replicate Kuang and Nielsen (2018)](https://github.com/JonasHarnau/apc/blob/master/apc/vignettes/vignette_generalized_log_normal.ipynb) 
   *  Non-Life Insurance Claim Reserving
   *  Estimating, testing and forecasting in generalized log-normal models. Comparison to over-dispersed Poisson modeling.
-* [Replicate Nielsen (2014)](apc/vignettes/vignette_deviance_analysis.ipynb) 
+* [Replicate Nielsen (2014)](https://github.com/JonasHarnau/apc/blob/master/apc/vignettes/vignette_deviance_analysis.ipynb) 
   *  Analysis of Belgian lung cancer data
   *  Estimating, testing and plotting in poisson-dose-response models. Testing for non-standard restrictions. Brief discussion of identification.
 
