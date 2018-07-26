@@ -32,10 +32,10 @@ Version 1.0.0 adds a number of new features. Among them are
   *  Plot parameter estimates: ``model.plot_fit()``
   *  Fit a deviance table to check for valid reductions: ``model.fit_table()``
 6. Test model for misspecification
-  *  $R$ test (generalized) log-normal against over-dispersed Poisson: ``apc.r_test(pandas.DataFrame, family_null, predictor)``
+  *  R test (generalized) log-normal against over-dispersed Poisson: ``apc.r_test(pandas.DataFrame, family_null, predictor)``
   *  Split into sub-models: ``model.sub_model(age_from_to, per_from_to, coh_from_to)``
   *  Bartlett test: ``apc.bartlett_test(sub_models)``
-  *  $F$ test: ``apc.f_test(model, sub_models)``
+  *  F test: ``apc.f_test(model, sub_models)``
 7. Form distribution forecasts: ``model.get_dist_fc()``
 8. Plot distribution forecasts: ``model.plot_forecast()``
 8. Simulate from the model: ``model.simulate(repetitions)``
@@ -49,7 +49,7 @@ The package includes vignettes that replicate the empirical applications of a nu
    *  Over-dispersed Poisson deviance analysis, parameter uncertainty, and distribution forecasting
 * [Replicate Harnau (2018a)](apc/vignettes/vignette_misspecification.ipynb) 
   *  Non-Life Insurance Claim Reserving
-  *  Testing specification of log-normal or over-dispersed Poisson models with Bartlett and $F$ tests
+  *  Testing specification of log-normal or over-dispersed Poisson models with Bartlett and F tests
 * [Replicate Harnau (2018b)](apc/vignettes/vignette_ln_vs_odp.ipynb)
   *  Non-Life Insurance Claim Reserving
   *  Direct testing between over-dispersed Poisson and (generalized) log-normal models
