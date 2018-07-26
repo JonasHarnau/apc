@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import apc
 
 def _chain_ladder(df, target_idx):
     """
@@ -61,7 +62,7 @@ def _chain_ladder(df, target_idx):
 
     return fc_point.astype(float)
 
-def bootstrap_forecast(model, quantiles=[0.75, 0.9, 0.95, 0.99], B=999, 
+def bootstrap_forecast(data, quantiles=[0.75, 0.9, 0.95, 0.99], B=999, 
                        adj_residuals=True, seed=None):
     """
     Generate bootstrap forecasts.
@@ -73,8 +74,8 @@ def bootstrap_forecast(model, quantiles=[0.75, 0.9, 0.95, 0.99], B=999,
     Parameters
     ----------
     
-    model : apc.Model() Class
-            A model after Model().data_from_df() was run.
+    data : pandas.DataFrame
+           Data for a run-off triangle that passes Model.data_from_df().
     
     quantiles : iterable of floats in (0, 1), optional
                 The quantiles for which the distribution forecast should be computed. 
@@ -102,7 +103,8 @@ def bootstrap_forecast(model, quantiles=[0.75, 0.9, 0.95, 0.99], B=999,
     See also
     --------
     
-    Vignette in apc/vignettes/vignette/over_dispersed_apc.ipynb.
+    Vignettes in apc/vignettes/vignette/over_dispersed_apc.ipynb and 
+    apc/vignettes/vignette/generazlied_log_normal.ipynb.
     
     
     Notes
@@ -129,12 +131,14 @@ def bootstrap_forecast(model, quantiles=[0.75, 0.9, 0.95, 0.99], B=999,
     Examples
     --------
     
-    >>> model = apc.Model()
-    >>> model.data_from_df(apc.loss_TA(), data_format='CL')
-    >>> model.fit('od_poisson_response', 'AC')
-    >>> apc.bootstrap_forecast(model)
+    >>> apc.bootstrap_forecast(apc.loss_TA())
     
     """
+    
+    model = apc.Model()
+    model.data_from_df(data, data_format='CL')
+    model.fit('od_poisson_response', 'AC')
+    
     np.random.seed(seed)
     rsdls = model.residuals['pearson'].copy()
     if adj_residuals:
@@ -155,9 +159,9 @@ def bootstrap_forecast(model, quantiles=[0.75, 0.9, 0.95, 0.99], B=999,
     bs_oosmpl = np.sign(bs_fc_point) * np.random.gamma(shape, scale)
     
     fc_bootstrap = {'Cell': bs_oosmpl.T.describe(quantiles).T,
-                    'Age': bs_oosmpl.sum(level='Age').T.describe(quantiles).T,
-                    'Cohort': bs_oosmpl.sum(level='Cohort').T.describe(quantiles).T,
-                    'Period': bs_oosmpl.sum(level='Period').T.describe(quantiles).T,
+                    'Age': bs_oosmpl.sum(level='Age').T.describe(quantiles).T.sort_index(),
+                    'Cohort': bs_oosmpl.sum(level='Cohort').T.describe(quantiles).T.sort_index(),
+                    'Period': bs_oosmpl.sum(level='Period').T.describe(quantiles).T.sort_index(),
                     'Total': pd.DataFrame(bs_oosmpl.sum().describe(quantiles).rename('Total')).T}
 
     return fc_bootstrap
