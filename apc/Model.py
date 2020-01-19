@@ -397,7 +397,7 @@ class Model:
         index_levels_age = index.levels[0]
         index_levels_per = index.levels[1]
         index_levels_coh = index.levels[2]
-        index_trap = (pd.DataFrame(index.labels, index=index.names).T.
+        index_trap = (pd.DataFrame(index.codes, index=index.names).T.
                       loc[:, ['Age', 'Cohort']])
 
         I, K, J, L, n = self.I, self.K, self.J, self.L, self.n
