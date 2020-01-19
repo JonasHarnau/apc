@@ -30,7 +30,6 @@ class Model:
             print(kwargs.keys())
             for key, value in kwargs.items():
                 setattr(self, key, value)
-        self.plot_fit = self.plot_parameters
 
     def data_from_df(self, response, dose=None, rate=None, data_format=None,
                      time_adjust=None):
@@ -795,19 +794,6 @@ class Model:
             fit_results['aic'] = aic
         except NameError:
             pass
-
-        import warnings
-        warnings.warn(
-            'In a future release, attributes "RSS" and "para_table" will be '
-            + ' available only as "rss" and "parameters".', FutureWarning)
-        # removed in future version
-        try:
-            fit_results['RSS'] = rss
-        except NameError:
-            pass
-        fit_results['para_table'] = table.rename(
-            columns={'std_err': 'std err'}
-            )
 
         if attach_to_self:
             for key, value in fit_results.items():
@@ -2037,12 +2023,6 @@ class Model:
 
         if attach_to_self:
             self.parameters_adhoc = parameters_adhoc
-            import warnings
-            warnings.warn('In a future release, "para_table_adhoc" will be'
-                          + 'available only as "parameters_adhoc"',
-                          FutureWarning)
-            # removed in next version
-            self.para_table_adhoc = parameters_adhoc
         else:
             return parameters_adhoc
 
@@ -2248,14 +2228,6 @@ class Model:
         fig.tight_layout()
 
         self.plotted_parameters = fig
-
-        import warnings
-        warnings.warn('In a future release, "plot_fit" and "plotted_fit" '
-                      + 'will be available only as "plot_parameters" and '
-                      + '"plotted_parameters", respectively.',
-                      FutureWarning)
-        # removed in next version
-        self.plotted_fit = fig
 
     def _get_fc_design(self, predictor):
         """Generate design for forecasting array."""
