@@ -9,35 +9,35 @@ class TestFit(unittest.TestCase):
         model.data_from_df(apc.loss_TA(), data_format='CL')
         model.fit(family='od_poisson_response', predictor='AC')
         
-        self.assertEqual(round(model.deviance,3), 1903014.004)
+        self.assertAlmostEqual(model.deviance, 1903014.004, 3)
         self.assertTrue(
             np.allclose(
                 model.parameters.sum().values,
                 np.array([10.99021854,  6.56495772,  0.37934664,  8.3525477])
             )
         )
-        self.assertEqual(round(model.fitted_values.sum(),3), 34358090.000)
+        self.assertAlmostEqual(model.fitted_values.sum(), 34358090.000, 3)
 
     def test_BZ_gln(self):
         model = apc.Model()
         model.data_from_df(apc.loss_BZ(), data_format='CL')
         model.fit(family='gen_log_normal_response', predictor='APC')
         
-        self.assertEqual(round(model.deviance,3), -287.459)
+        self.assertAlmostEqual(model.deviance, -287.459, 3)
         self.assertTrue(
             np.allclose(
                 model.parameters.sum().values,
                 np.array([11.83624119,   1.26201587, 312.66337107,  12.1751463])
             )
         )
-        self.assertEqual(round(model.fitted_values.sum(),3), 10214114.721)
+        self.assertAlmostEqual(model.fitted_values.sum(), 10214114.721, 3)
                 
     def test_asbestos_poisson(self):
         model = apc.Model()
         model.data_from_df(apc.asbestos(), data_format='PA')
         model.fit(family='poisson_response', predictor='AC')
         
-        self.assertEqual(round(model.deviance,3), 2599.565)
+        self.assertAlmostEqual(model.deviance, 2599.565, 3)
         self.assertTrue(
             np.allclose(
                 model.parameters.sum().values,
@@ -46,15 +46,16 @@ class TestFit(unittest.TestCase):
                 )
             )
         )
-        self.assertEqual(model.fitted_values.sum().astype(int), 
-                         model.data_vector.sum()[0])
+        self.assertAlmostEqual(
+            model.fitted_values.sum(), model.data_vector.sum()[0]
+        )
         
     def test_Belgian_poisson_dose_response(self):
         model = apc.Model()
         model.data_from_df(**apc.Belgian_lung_cancer())
         model.fit(family='poisson_dose_response', predictor='APC')
         
-        self.assertEqual(round(model.deviance,3), 20.225)
+        self.assertAlmostEqual(model.deviance, 20.225, 3)
         self.assertTrue(np.allclose(
             model.parameters['P>|z|'].values,
             np.array([
@@ -68,21 +69,21 @@ class TestFit(unittest.TestCase):
             ]), 
             equal_nan=True)
                        )
-        self.assertEqual(round(model.fitted_values.sum(),3), 6092.0)
+        self.assertAlmostEqual(model.fitted_values.sum(), 6092.0)
         
     def test_Belgian_ln_rates(self):
         model = apc.Model()
         model.data_from_df(**apc.Belgian_lung_cancer())
         model.fit(family='log_normal_rates', predictor='APC')
         
-        self.assertEqual(round(model.deviance,3), -44.854)
+        self.assertAlmostEqual(model.deviance, -44.854, 3)
         self.assertTrue(
             np.allclose(
                 model.parameters.sum().values,
                 np.array([ 1.07781409,  7.31144396,  9.98467135, 15.2844013 ])
             )
         )
-        self.assertEqual(round(model.fitted_values.sum(),3), 552.365)
+        self.assertAlmostEqual(model.fitted_values.sum(), 552.365, 3)
         
     def test_Belgian_bin_dose_response(self):
         data = apc.Belgian_lung_cancer()
@@ -91,7 +92,7 @@ class TestFit(unittest.TestCase):
         model.data_from_df(data['response'], dose=dose, data_format='AP')
         model.fit('binomial_dose_response', 'APC')
         
-        self.assertEqual(round(model.deviance,3), 20.227)
+        self.assertAlmostEqual(model.deviance, 20.227, 3)
         self.assertTrue(np.allclose(
             model.parameters['P>|z|'].values,
             np.array([
@@ -105,7 +106,7 @@ class TestFit(unittest.TestCase):
             ]), 
             equal_nan=True)
                        )
-        self.assertEqual(round(model.fitted_values.sum(),10), 0.0055324403)
+        self.assertAlmostEqual(model.fitted_values.sum(), 0.0055324403, 10)
         
 if __name__ == '__main__':
     unittest.main()

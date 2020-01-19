@@ -10,8 +10,8 @@ class TestFTest(unittest.TestCase):
         sub_models = [model.sub_model(coh_from_to=(1,5)), 
                       model.sub_model(coh_from_to=(6,10))]
         f = apc.f_test(model, sub_models)
-        self.assertEqual(round(f['F_stat'], 3), 0.242)
-        self.assertEqual(round(f['p_value'], 3), 0.912)
+        self.assertAlmostEqual(f['F_stat'], 0.242, 3)
+        self.assertAlmostEqual(f['p_value'], 0.912, 3)
 
     def test_BZ(self):
         model = apc.Model()
@@ -21,8 +21,8 @@ class TestFTest(unittest.TestCase):
                       model.sub_model(per_from_to=(1982,1984)),
                       model.sub_model(per_from_to=(1985,1987))]
         f = apc.f_test(model, sub_models)
-        self.assertEqual(round(f['F_stat'], 3), 1.855)
-        self.assertEqual(round(f['p_value'], 3), 0.133)
+        self.assertAlmostEqual(f['F_stat'], 1.855, 3)
+        self.assertAlmostEqual(f['p_value'], 0.133, 3)
         
 if __name__ == '__main__':
     unittest.main()
