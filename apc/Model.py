@@ -2017,11 +2017,11 @@ class Model:
                 [C_d_coef, C_d_stderr, C_d_t_stat, C_d_p_values],
                 index=column_labels).T
 
-            A_d_rows.index = A_d_rows.reset_index()['index'].apply(
+            A_d_rows.index = A_d_rows.reset_index().iloc[:, 0].apply(
                 lambda x: 'A_detrend_' + x[2:])
-            B_d_rows.index = B_d_rows.reset_index()['index'].apply(
+            B_d_rows.index = B_d_rows.reset_index().iloc[:, 0].apply(
                 lambda x: 'B_detrend_' + x[2:])
-            C_d_rows.index = C_d_rows.reset_index()['index'].apply(
+            C_d_rows.index = C_d_rows.reset_index().iloc[:, 0].apply(
                 lambda x: 'C_detrend_' + x[2:])
             A_d_rows.columns = column_labels
             B_d_rows.columns = column_labels
@@ -2143,7 +2143,7 @@ class Model:
 
         def get_xticklabels(series, simplify_to):
             try:
-                col_range = series.reset_index()['index'].str.split(
+                col_range = series.reset_index().iloc[:, 0].str.split(
                     '_', expand=True).iloc[:, -1]
                 if simplify_to is False:
                     label = col_range.values
