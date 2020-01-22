@@ -30,7 +30,6 @@ class Model:
             print(kwargs.keys())
             for key, value in kwargs.items():
                 setattr(self, key, value)
-        self.plot_fit = self.plot_parameters
 
     def data_from_df(self, response, dose=None, rate=None, data_format=None,
                      time_adjust=None):
@@ -397,7 +396,7 @@ class Model:
         index_levels_age = index.levels[0]
         index_levels_per = index.levels[1]
         index_levels_coh = index.levels[2]
-        index_trap = (pd.DataFrame(index.labels, index=index.names).T.
+        index_trap = (pd.DataFrame(index.codes, index=index.names).T.
                       loc[:, ['Age', 'Cohort']])
 
         I, K, J, L, n = self.I, self.K, self.J, self.L, self.n
@@ -795,19 +794,6 @@ class Model:
             fit_results['aic'] = aic
         except NameError:
             pass
-
-        import warnings
-        warnings.warn(
-            'In a future release, attributes "RSS" and "para_table" will be '
-            + ' available only as "rss" and "parameters".', FutureWarning)
-        # removed in future version
-        try:
-            fit_results['RSS'] = rss
-        except NameError:
-            pass
-        fit_results['para_table'] = table.rename(
-            columns={'std_err': 'std err'}
-            )
 
         if attach_to_self:
             for key, value in fit_results.items():
@@ -2017,11 +2003,11 @@ class Model:
                 [C_d_coef, C_d_stderr, C_d_t_stat, C_d_p_values],
                 index=column_labels).T
 
-            A_d_rows.index = A_d_rows.reset_index()['index'].apply(
+            A_d_rows.index = A_d_rows.reset_index().iloc[:, 0].apply(
                 lambda x: 'A_detrend_' + x[2:])
-            B_d_rows.index = B_d_rows.reset_index()['index'].apply(
+            B_d_rows.index = B_d_rows.reset_index().iloc[:, 0].apply(
                 lambda x: 'B_detrend_' + x[2:])
-            C_d_rows.index = C_d_rows.reset_index()['index'].apply(
+            C_d_rows.index = C_d_rows.reset_index().iloc[:, 0].apply(
                 lambda x: 'C_detrend_' + x[2:])
             A_d_rows.columns = column_labels
             B_d_rows.columns = column_labels
@@ -2037,12 +2023,6 @@ class Model:
 
         if attach_to_self:
             self.parameters_adhoc = parameters_adhoc
-            import warnings
-            warnings.warn('In a future release, "para_table_adhoc" will be'
-                          + 'available only as "parameters_adhoc"',
-                          FutureWarning)
-            # removed in next version
-            self.para_table_adhoc = parameters_adhoc
         else:
             return parameters_adhoc
 
@@ -2143,7 +2123,7 @@ class Model:
 
         def get_xticklabels(series, simplify_to):
             try:
-                col_range = series.reset_index()['index'].str.split(
+                col_range = series.reset_index().iloc[:, 0].str.split(
                     '_', expand=True).iloc[:, -1]
                 if simplify_to is False:
                     label = col_range.values
@@ -2248,14 +2228,6 @@ class Model:
         fig.tight_layout()
 
         self.plotted_parameters = fig
-
-        import warnings
-        warnings.warn('In a future release, "plot_fit" and "plotted_fit" '
-                      + 'will be available only as "plot_parameters" and '
-                      + '"plotted_parameters", respectively.',
-                      FutureWarning)
-        # removed in next version
-        self.plotted_fit = fig
 
     def _get_fc_design(self, predictor):
         """Generate design for forecasting array."""

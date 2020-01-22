@@ -28,8 +28,8 @@ class TestDataFromDf(unittest.TestCase):
         self.assertEqual(model.L, 0)
         self.assertEqual(model.n, 55)
         self.assertEqual(model.time_adjust, 1)
-        self.assertEqual(round(model.data_vector.sum()['response'],3), 
-                         34358090.0)
+        self.assertAlmostEqual(
+            model.data_vector.sum()['response'], 34358090.0, 3)
 
     def test_BZ(self):
         model = apc.Model()
@@ -42,8 +42,8 @@ class TestDataFromDf(unittest.TestCase):
         self.assertEqual(model.L, 0)
         self.assertEqual(model.n, 66)
         self.assertEqual(model.time_adjust, 0)
-        self.assertEqual(round(model.data_vector.sum()['response'],3), 
-                         10221194.0)        
+        self.assertAlmostEqual(
+            model.data_vector.sum()['response'], 10221194.0, 3) 
         
     def test_Belgian(self):
         data = pd.read_excel(
@@ -60,12 +60,12 @@ class TestDataFromDf(unittest.TestCase):
         self.assertEqual(model.K, 14)
         self.assertEqual(model.L, 10)
         self.assertEqual(model.n, 44)
-        self.assertEqual(round(model.data_vector.sum()['response'],3), 
-                         6092.0)
-        self.assertEqual(round(model.data_vector.sum()['dose'],3), 
-                         590.843)
-        self.assertEqual(round(model.data_vector.sum()['rate'],3),
-                         553.150)
+        self.assertAlmostEqual(model.data_vector.sum()['response'], 
+                         6092.0, 3)
+        self.assertAlmostEqual(model.data_vector.sum()['dose'], 
+                         590.843, 3)
+        self.assertAlmostEqual(model.data_vector.sum()['rate'],
+                         553.150, 3)
     
 if __name__ == '__main__':
     unittest.main()

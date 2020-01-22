@@ -4,6 +4,8 @@ This package is for age-period-cohort and extended chain-ladder analysis. It all
 
 ## Latest changes
 
+Version 1.0.2 fixes some bugs introduced by pandas 0.25.0. apc 1.0.2 now requires pandas >=0.24.0. Further, the version refactors some of the unittests and removes deprecated behavior.
+
 Version 1.0.1 fixes some typos and refactors production code.
 
 Version 1.0.0 adds a number of new features. Among them are
