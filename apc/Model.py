@@ -1797,9 +1797,15 @@ class Model:
         if (C_coef == 0).all():
             C_coef = C_coef.replace(0, np.nan)
 
-        A_cov = A_design.dot(age_cov).dot(A_design.T)
-        B_cov = B_design.dot(per_cov).dot(B_design.T)
-        C_cov = C_design.dot(coh_cov).dot(C_design.T)
+        # handling absence of _cov matrices (if didn't estimate those components)
+        # explicitly filling with np.nan in the else case is needed for downstream
+        # consistency.
+        A_cov = A_design.dot(age_cov).dot(A_design.T) if not age_cov.empty \
+            else pd.DataFrame(np.nan, index=A_design.index, columns=A_design.index)
+        B_cov = B_design.dot(per_cov).dot(B_design.T) if not per_cov.empty \
+            else pd.DataFrame(np.nan, index=B_design.index, columns=B_design.index)
+        C_cov = C_design.dot(coh_cov).dot(C_design.T) if not coh_cov.empty \
+            else pd.DataFrame(np.nan, index=C_design.index, columns=C_design.index)
 
         A_stderr = pd.Series(
             np.sqrt(np.diag(A_cov)), index=A_coef.index).replace(0, np.nan)
