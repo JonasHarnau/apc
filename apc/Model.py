@@ -398,7 +398,7 @@ class Model:
         index_levels_per = index.levels[1]
         index_levels_coh = index.levels[2]
         index_trap = (pd.DataFrame(index.codes, index=index.names).T.
-                      loc[:, ['Age', 'Cohort']])
+                    loc[:, ['Age', 'Cohort']])
 
         I, K, J, L, n = self.I, self.K, self.J, self.L, self.n
 
@@ -417,28 +417,35 @@ class Model:
         dd_age_col = ['dd_age_{}'.format(age) for age in index_levels_age[2:]]
         dd_age = pd.DataFrame(0, index=range(n), columns=dd_age_col)
         for i in range(anchor_index):
-            dd_age.loc[slope_age == -anchor_index+i, i:anchor_index] = (
-                np.arange(1, anchor_index-i+1))
+            # handle empty case gracefully
+            if (slope_age == -anchor_index+i).any():
+                dd_age.loc[slope_age == -anchor_index+i, dd_age.columns[i:anchor_index]] = (
+                    np.arange(1, anchor_index-i+1))
         for i in range(1, I - anchor_index):
-            dd_age.loc[slope_age == i+1, anchor_index:anchor_index+i] = (
-                np.arange(i, 0, -1))
+            if (slope_age == i+1).any():
+                dd_age.loc[slope_age == i+1, dd_age.columns[anchor_index:anchor_index+i]] = (
+                    np.arange(i, 0, -1))
 
         dd_per_col = ['dd_per_{}'.format(per) for per in index_levels_per[2:]]
         dd_per = pd.DataFrame(0, index=range(n), columns=dd_per_col)
         if per_odd:
-            dd_per.loc[slope_per == -1, 0:1] = 1
+            if (slope_per == -1).any():
+                dd_per.loc[slope_per == -1, dd_per.columns[0:1]] = 1
         for j in range(J-2-per_odd):
-            dd_per.loc[slope_per == j+2, int(per_odd):j+1+int(per_odd)] = (
-                np.arange(j+1, 0, -1))
+            if (slope_per == j+2).any():
+                dd_per.loc[slope_per == j+2, dd_per.columns[int(per_odd):j+1+int(per_odd)]] = (
+                    np.arange(j+1, 0, -1))
 
         dd_coh_col = ['dd_coh_{}'.format(coh) for coh in index_levels_coh[2:]]
         dd_coh = pd.DataFrame(0, index=range(n), columns=dd_coh_col)
         for k in range(anchor_index):
-            dd_coh.loc[slope_coh == -anchor_index+k, k:anchor_index] = (
-                np.arange(1, anchor_index-k+1))
+            if (slope_coh == -anchor_index+k).any():
+                dd_coh.loc[slope_coh == -anchor_index+k, dd_coh.columns[k:anchor_index]] = (
+                    np.arange(1, anchor_index-k+1))
         for k in range(1, K - anchor_index):
-            dd_coh.loc[slope_coh == k+1, anchor_index:anchor_index+k] = (
-                np.arange(k, 0, -1))
+            if (slope_coh == k+1).any():
+                dd_coh.loc[slope_coh == k+1, dd_coh.columns[anchor_index:anchor_index+k]] = (
+                    np.arange(k, 0, -1))
 
         design_components = {
             'index': self.data_vector.index,
