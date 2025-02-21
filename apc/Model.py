@@ -1897,7 +1897,7 @@ class Model:
                 np.sqrt(np.diag(C_d_cov)), index=C_coef.index
                 ).replace(0, np.nan)
 
-            level_d_design = pd.Series(0, index=index_labels)
+            level_d_design = pd.Series(0., index=index_labels)
             level_d_design.loc['level'] = 1
             level_d_design.loc[f(index_labels, 'slope_age')] = -U
             level_d_design.loc[f(index_labels, 'slope_coh')] = -U
@@ -1913,7 +1913,7 @@ class Model:
 
             if predictor in ('APC', 'AP', 'AC', 'PC', 'Ad', 'Pd', 'Cd', 'A',
                              't', 'tA'):
-                slope_age_d_design = pd.Series(0, index=index_labels)
+                slope_age_d_design = pd.Series(0., index=index_labels)
                 slope_age_d_design.loc[f(index_labels, 'slope_age')] = 1
                 slope_age_d_design.loc[f(index_labels, 'dd_age')] = (
                     (A_design.iloc[-1, :] - A_design.iloc[0, :])/(I-1)
@@ -1940,7 +1940,7 @@ class Model:
 
             if predictor in ('APC', 'AP', 'AC', 'PC', 'Ad', 'Pd', 'Cd', 'C',
                              't', 'tC'):
-                slope_coh_d_design = pd.Series(0, index=index_labels)
+                slope_coh_d_design = pd.Series(0., index=index_labels)
                 slope_coh_d_design.loc[f(index_labels, 'slope_coh')] = 1
                 slope_coh_d_design.loc[f(index_labels, 'dd_coh')] = (
                     (C_design.iloc[-1, :] - C_design.iloc[0, :])/(K-1)
@@ -1965,7 +1965,7 @@ class Model:
                 slope_coh_d_row = None
 
             if predictor in ('P', 'tP'):
-                slope_per_d_design = pd.Series(0, index=index_labels)
+                slope_per_d_design = pd.Series(0., index=index_labels)
                 slope_per_d_design.loc[f(index_labels, 'slope_per')] = 1
                 slope_per_d_design.loc[f(index_labels, 'dd_per')] = (
                     (B_design.iloc[-1, :] - B_design.iloc[0, :])/(J-1)
