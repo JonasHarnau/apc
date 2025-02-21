@@ -183,7 +183,8 @@ class Model:
         try:  # try to convert to integers, in case int loaded as str
             response.columns = response.columns.astype(int)
             response.index = response.index.astype(int)
-        except TypeError:
+        except (TypeError, ValueError): 
+            # pandas docs say it raises TypeError, but seems to have switched back to value error
             pass
 
         if rate is None and dose is None:
