@@ -2395,7 +2395,7 @@ class Model:
             if lvl == 'Cell':
                 return df
             elif lvl in ('Age', 'Period', 'Cohort'):
-                return df.sum(level=lvl).sort_index()
+                return df.groupby(lvl).sum().sort_index()
             else:
                 try:
                     return pd.DataFrame(df.sum(), columns=['Total']).T
@@ -2620,8 +2620,8 @@ class Model:
         """
         flt = pd.IndexSlice[from_to[0]:from_to[1]]
 
-        response = self.data_vector['response'].sum(level=by).loc[flt]
-        fitted = self.fitted_values.sum(level=by).rename('fitted').loc[flt]
+        response = self.data_vector['response'].groupby(by).sum().loc[flt]
+        fitted = self.fitted_values.groupby(by).sum().rename('fitted').loc[flt]
         point_fc = self.forecasts[by]['point_forecast'].copy().loc[flt]
         if ic:
             ic_factor = (response.sort_index().iloc[-1]
