@@ -2215,8 +2215,8 @@ class Model:
         if predictor in ('C', 'tC'):
             ax[1, 2].set_title('cohort linear trend')
 
-        err_plot(pd.Series([get_coefs('level')[0]] * 2),
-                 pd.Series([get_stderr('level')[0]] * 2),
+        err_plot(pd.Series([get_coefs('level').iloc[0]] * 2),
+                 pd.Series([get_stderr('level').iloc[0]] * 2),
                  ax[1, 1], range(2),
                  'age, period,cohort', 'level', around_coef)
         ax[1, 1].set_xticks([])
