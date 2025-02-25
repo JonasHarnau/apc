@@ -2,8 +2,7 @@
 
 import numpy as np
 import pandas as pd
-from pkg_resources import resource_filename
-
+from importlib.resources import files
 
 def loss_TA():
     """
@@ -35,7 +34,7 @@ def loss_TA():
     outstanding claims. Journal of Econometrics, 23(1), 37–61.
 
     """
-    data_ta = pd.read_csv(resource_filename('apc', 'data/loss_TA.csv'),
+    data_ta = pd.read_csv(files('apc') / 'data/loss_TA.csv',
                           index_col=0)
     data_ta.index.name = 'Accident Year'
     data_ta.columns.name = 'Development Year'
@@ -89,19 +88,19 @@ def loss_VNJ(include_counts=False):
 
     """
     response_vnj = pd.read_excel(
-        resource_filename('apc', 'data/loss_VNJ.xlsx'), 'response', index_col=0
+        files('apc') / 'data/loss_VNJ.xlsx', 'response', index_col=0
         )
     response_vnj.index.name = 'Accident Year'
     response_vnj.columns.name = 'Development Year'
 
     counts_vnj = pd.read_excel(
-        resource_filename('apc', 'data/loss_VNJ.xlsx'), 'counts', index_col=0
+        files('apc') / 'data/loss_VNJ.xlsx', 'counts', index_col=0
         )
     counts_vnj.index.name = 'Accident Year'
     counts_vnj.columns.name = 'Development Year'
 
     if include_counts:
-        data_vnj = {'response': response_vnj, 'counts': data_vnj_counts}
+        data_vnj = {'response': response_vnj, 'counts': counts_vnj}
     else:
         data_vnj = response_vnj
 
@@ -143,11 +142,11 @@ def Belgian_lung_cancer():
 
     """
     lung_cases = pd.read_excel(
-        resource_filename('apc', 'data/Belgian_lung_cancer.xlsx'), 'response',
+        files('apc') / 'data/Belgian_lung_cancer.xlsx', 'response',
         index_col=0
         )
     lung_rates = pd.read_excel(
-        resource_filename('apc', 'data/Belgian_lung_cancer.xlsx'), 'rates',
+        files('apc') / 'data/Belgian_lung_cancer.xlsx', 'rates',
         index_col=0
         )
     lung_data = {'response': lung_cases, 'rate': lung_rates,
@@ -184,7 +183,7 @@ def loss_BZ():
 
     """
     data_bz = pd.read_csv(
-        resource_filename('apc', 'data/loss_BZ.csv'), index_col=0
+        files('apc') / 'data/loss_BZ.csv', index_col=0
         )
     data_bz.index.name = 'Accident Year'
     data_bz.columns.name = 'Development Year'
@@ -241,7 +240,7 @@ def asbestos(sample='2007', balanced=True):
 
     """
     asbestos = pd.read_excel(
-        resource_filename('apc', 'data/asbestos_mortality.xlsx'), sample,
+        files('apc') / 'data/asbestos_mortality.xlsx', sample,
         index_col='Period'
         )
     asbestos.columns.name = 'Age'
@@ -280,7 +279,7 @@ def loss_KN():
 
     """
     data_kn = pd.read_csv(
-        resource_filename('apc', 'data/loss_KN.csv'), index_col=0
+        files('apc') / 'data/loss_KN.csv', index_col=0
         )
     data_kn.index.name = 'Cohort'
     data_kn.columns.name = 'Age'

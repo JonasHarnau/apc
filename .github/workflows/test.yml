@@ -1,0 +1,32 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, development ]
+  pull_request:
+    branches: [ main, development ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Setup environment
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install .  # Installs your apc package (editable install if setup.py exists)
+
+      - name: Run tests
+        run: |
+          source venv/bin/activate
+          python -m unittest discover -s apc/tests -p "test_*.py" -v
