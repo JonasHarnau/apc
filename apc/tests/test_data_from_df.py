@@ -1,7 +1,7 @@
 import unittest
 import pandas as pd
 import apc
-from pkg_resources import resource_filename
+from importlib.resources import files
 
 class TestDataFromDf(unittest.TestCase):
 
@@ -47,7 +47,7 @@ class TestDataFromDf(unittest.TestCase):
         
     def test_Belgian(self):
         data = pd.read_excel(
-            resource_filename('apc', 'data/Belgian_lung_cancer.xlsx'), 
+            files('apc') / 'data/Belgian_lung_cancer.xlsx', 
             sheet_name = ['response', 'rates'], 
             index_col = 0)
         model = apc.Model()

@@ -183,7 +183,8 @@ class Model:
         try:  # try to convert to integers, in case int loaded as str
             response.columns = response.columns.astype(int)
             response.index = response.index.astype(int)
-        except TypeError:
+        except (TypeError, ValueError): 
+            # pandas docs say it raises TypeError, but seems to have switched back to value error
             pass
 
         if rate is None and dose is None:
@@ -397,7 +398,7 @@ class Model:
         index_levels_per = index.levels[1]
         index_levels_coh = index.levels[2]
         index_trap = (pd.DataFrame(index.codes, index=index.names).T.
-                      loc[:, ['Age', 'Cohort']])
+                    loc[:, ['Age', 'Cohort']])
 
         I, K, J, L, n = self.I, self.K, self.J, self.L, self.n
 
@@ -416,28 +417,35 @@ class Model:
         dd_age_col = ['dd_age_{}'.format(age) for age in index_levels_age[2:]]
         dd_age = pd.DataFrame(0, index=range(n), columns=dd_age_col)
         for i in range(anchor_index):
-            dd_age.loc[slope_age == -anchor_index+i, i:anchor_index] = (
-                np.arange(1, anchor_index-i+1))
+            # handle empty case gracefully
+            if (slope_age == -anchor_index+i).any():
+                dd_age.loc[slope_age == -anchor_index+i, dd_age.columns[i:anchor_index]] = (
+                    np.arange(1, anchor_index-i+1))
         for i in range(1, I - anchor_index):
-            dd_age.loc[slope_age == i+1, anchor_index:anchor_index+i] = (
-                np.arange(i, 0, -1))
+            if (slope_age == i+1).any():
+                dd_age.loc[slope_age == i+1, dd_age.columns[anchor_index:anchor_index+i]] = (
+                    np.arange(i, 0, -1))
 
         dd_per_col = ['dd_per_{}'.format(per) for per in index_levels_per[2:]]
         dd_per = pd.DataFrame(0, index=range(n), columns=dd_per_col)
         if per_odd:
-            dd_per.loc[slope_per == -1, 0:1] = 1
+            if (slope_per == -1).any():
+                dd_per.loc[slope_per == -1, dd_per.columns[0:1]] = 1
         for j in range(J-2-per_odd):
-            dd_per.loc[slope_per == j+2, int(per_odd):j+1+int(per_odd)] = (
-                np.arange(j+1, 0, -1))
+            if (slope_per == j+2).any():
+                dd_per.loc[slope_per == j+2, dd_per.columns[int(per_odd):j+1+int(per_odd)]] = (
+                    np.arange(j+1, 0, -1))
 
         dd_coh_col = ['dd_coh_{}'.format(coh) for coh in index_levels_coh[2:]]
         dd_coh = pd.DataFrame(0, index=range(n), columns=dd_coh_col)
         for k in range(anchor_index):
-            dd_coh.loc[slope_coh == -anchor_index+k, k:anchor_index] = (
-                np.arange(1, anchor_index-k+1))
+            if (slope_coh == -anchor_index+k).any():
+                dd_coh.loc[slope_coh == -anchor_index+k, dd_coh.columns[k:anchor_index]] = (
+                    np.arange(1, anchor_index-k+1))
         for k in range(1, K - anchor_index):
-            dd_coh.loc[slope_coh == k+1, anchor_index:anchor_index+k] = (
-                np.arange(k, 0, -1))
+            if (slope_coh == k+1).any():
+                dd_coh.loc[slope_coh == k+1, dd_coh.columns[anchor_index:anchor_index+k]] = (
+                    np.arange(k, 0, -1))
 
         design_components = {
             'index': self.data_vector.index,
@@ -1789,9 +1797,15 @@ class Model:
         if (C_coef == 0).all():
             C_coef = C_coef.replace(0, np.nan)
 
-        A_cov = A_design.dot(age_cov).dot(A_design.T)
-        B_cov = B_design.dot(per_cov).dot(B_design.T)
-        C_cov = C_design.dot(coh_cov).dot(C_design.T)
+        # handling absence of _cov matrices (if didn't estimate those components)
+        # explicitly filling with np.nan in the else case is needed for downstream
+        # consistency.
+        A_cov = A_design.dot(age_cov).dot(A_design.T) if not age_cov.empty \
+            else pd.DataFrame(np.nan, index=A_design.index, columns=A_design.index)
+        B_cov = B_design.dot(per_cov).dot(B_design.T) if not per_cov.empty \
+            else pd.DataFrame(np.nan, index=B_design.index, columns=B_design.index)
+        C_cov = C_design.dot(coh_cov).dot(C_design.T) if not coh_cov.empty \
+            else pd.DataFrame(np.nan, index=C_design.index, columns=C_design.index)
 
         A_stderr = pd.Series(
             np.sqrt(np.diag(A_cov)), index=A_coef.index).replace(0, np.nan)
@@ -1883,7 +1897,7 @@ class Model:
                 np.sqrt(np.diag(C_d_cov)), index=C_coef.index
                 ).replace(0, np.nan)
 
-            level_d_design = pd.Series(0, index=index_labels)
+            level_d_design = pd.Series(0., index=index_labels)
             level_d_design.loc['level'] = 1
             level_d_design.loc[f(index_labels, 'slope_age')] = -U
             level_d_design.loc[f(index_labels, 'slope_coh')] = -U
@@ -1899,7 +1913,7 @@ class Model:
 
             if predictor in ('APC', 'AP', 'AC', 'PC', 'Ad', 'Pd', 'Cd', 'A',
                              't', 'tA'):
-                slope_age_d_design = pd.Series(0, index=index_labels)
+                slope_age_d_design = pd.Series(0., index=index_labels)
                 slope_age_d_design.loc[f(index_labels, 'slope_age')] = 1
                 slope_age_d_design.loc[f(index_labels, 'dd_age')] = (
                     (A_design.iloc[-1, :] - A_design.iloc[0, :])/(I-1)
@@ -1926,7 +1940,7 @@ class Model:
 
             if predictor in ('APC', 'AP', 'AC', 'PC', 'Ad', 'Pd', 'Cd', 'C',
                              't', 'tC'):
-                slope_coh_d_design = pd.Series(0, index=index_labels)
+                slope_coh_d_design = pd.Series(0., index=index_labels)
                 slope_coh_d_design.loc[f(index_labels, 'slope_coh')] = 1
                 slope_coh_d_design.loc[f(index_labels, 'dd_coh')] = (
                     (C_design.iloc[-1, :] - C_design.iloc[0, :])/(K-1)
@@ -1951,7 +1965,7 @@ class Model:
                 slope_coh_d_row = None
 
             if predictor in ('P', 'tP'):
-                slope_per_d_design = pd.Series(0, index=index_labels)
+                slope_per_d_design = pd.Series(0., index=index_labels)
                 slope_per_d_design.loc[f(index_labels, 'slope_per')] = 1
                 slope_per_d_design.loc[f(index_labels, 'dd_per')] = (
                     (B_design.iloc[-1, :] - B_design.iloc[0, :])/(J-1)
@@ -2201,8 +2215,8 @@ class Model:
         if predictor in ('C', 'tC'):
             ax[1, 2].set_title('cohort linear trend')
 
-        err_plot(pd.Series([get_coefs('level')[0]] * 2),
-                 pd.Series([get_stderr('level')[0]] * 2),
+        err_plot(pd.Series([get_coefs('level').iloc[0]] * 2),
+                 pd.Series([get_stderr('level').iloc[0]] * 2),
                  ax[1, 1], range(2),
                  'age, period,cohort', 'level', around_coef)
         ax[1, 1].set_xticks([])
@@ -2381,7 +2395,7 @@ class Model:
             if lvl == 'Cell':
                 return df
             elif lvl in ('Age', 'Period', 'Cohort'):
-                return df.sum(level=lvl).sort_index()
+                return df.groupby(lvl).sum().sort_index()
             else:
                 try:
                     return pd.DataFrame(df.sum(), columns=['Total']).T
@@ -2606,8 +2620,8 @@ class Model:
         """
         flt = pd.IndexSlice[from_to[0]:from_to[1]]
 
-        response = self.data_vector['response'].sum(level=by).loc[flt]
-        fitted = self.fitted_values.sum(level=by).rename('fitted').loc[flt]
+        response = self.data_vector['response'].groupby(by).sum().loc[flt]
+        fitted = self.fitted_values.groupby(by).sum().rename('fitted').loc[flt]
         point_fc = self.forecasts[by]['point_forecast'].copy().loc[flt]
         if ic:
             ic_factor = (response.sort_index().iloc[-1]

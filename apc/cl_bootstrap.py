@@ -39,7 +39,7 @@ def _chain_ladder(df, target_idx):
     time_adjust = coh_max - per_max + 1
 
     # row-sums in a run-off triangle
-    coh_sums = df.sum(level='Cohort')
+    coh_sums = df.groupby('Cohort').sum()
 
     # compute development factors
     dev_fctrs = []
@@ -152,9 +152,9 @@ def bootstrap_forecast(data, quantiles=[0.75, 0.9, 0.95, 0.99], B=999,
 
     fc_bootstrap = {
         'Cell': bs_oosmpl.T.describe(quantiles).T,
-        'Age': bs_oosmpl.sum(level='Age').T.describe(quantiles).T,
-        'Cohort': bs_oosmpl.sum(level='Cohort').T.describe(quantiles).T,
-        'Period': bs_oosmpl.sum(level='Period').T.describe(quantiles).T,
+        'Age': bs_oosmpl.groupby('Age').sum().T.describe(quantiles).T,
+        'Cohort': bs_oosmpl.groupby('Cohort').sum().T.describe(quantiles).T,
+        'Period': bs_oosmpl.groupby('Period').sum().T.describe(quantiles).T,
         'Total': bs_oosmpl.sum().describe(quantiles).rename('Total')
         }
 

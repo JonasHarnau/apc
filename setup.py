@@ -7,17 +7,17 @@ with open("README.md", "r", encoding='utf8') as fh:
 
 setuptools.setup(
     name='apc',
-    version='1.0.2',
+    version='1.0.3',
     description='Age-Period-Cohort and extended Chain-Ladder Analysis',
     url='http://github.com/JonasHarnau/apc',
     author='Jonas Harnau',
     author_email='j.harnau@outlook.com',
     license='GPLv3',
     packages=setuptools.find_packages(),
-    python_requires='>=3.6',
+    python_requires='>=3.10',
     install_requires=[
-        'matplotlib', 'numpy', 'pandas>=0.24.0', 'quad_form_ratio', 'seaborn',
-        'scipy', 'statsmodels'
+        'matplotlib', 'numpy', 'pandas>=2.0.0', 'quad_form_ratio', 'seaborn',
+        'scipy', 'statsmodels', 'openpyxl',
     ],
     include_package_data=True,
     classifiers=['Development Status :: 3 - Alpha'],

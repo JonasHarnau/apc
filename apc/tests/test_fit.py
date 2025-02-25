@@ -47,7 +47,7 @@ class TestFit(unittest.TestCase):
             )
         )
         self.assertAlmostEqual(
-            model.fitted_values.sum(), model.data_vector.sum()[0]
+            model.fitted_values.sum(), model.data_vector.sum().iloc[0]
         )
         
     def test_Belgian_poisson_dose_response(self):
